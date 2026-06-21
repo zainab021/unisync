@@ -155,9 +155,31 @@ html.light-mode svg image {
   filter: invert(1) hue-rotate(180deg);
 }
 
-/* Keep amber/gold colors correct */
+/* Fix amber/yellow text — cancel parent filter + use dark amber readable on white */
 html.light-mode .text-amber-400,
 html.light-mode .text-amber-300,
-html.light-mode .text-amber-500 {
+html.light-mode .text-amber-500,
+html.light-mode .text-amber-200,
+html.light-mode .text-amber-600 {
+  filter: invert(1) hue-rotate(180deg);
+  color: #92400e !important;
+}
+
+/* Fix amber badges/buttons */
+html.light-mode .bg-amber-500,
+html.light-mode .bg-amber-400 {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #d97706 !important;
+}
+
+/* Fix amber borders */
+html.light-mode [class*="border-amber"] {
+  filter: invert(1) hue-rotate(180deg);
+  border-color: #d97706 !important;
+}
+
+/* Fix amber background opacity classes */
+html.light-mode [class*="bg-amber-500/"],
+html.light-mode [class*="from-amber-"] {
   filter: invert(1) hue-rotate(180deg);
 }
