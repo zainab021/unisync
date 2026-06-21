@@ -185,6 +185,53 @@ SELECT 'Eid ul Adha',       '2026-06-16','2026-06-19','Holiday','amber',  id FRO
 INSERT INTO calendar_events (title, date, end_date, category, color, created_by)
 SELECT 'Independence Day',  '2026-08-14','2026-08-14','Holiday','emerald',id FROM users WHERE role='admin' LIMIT 1;
 
+-- Library Books Table (if not exists)
+CREATE TABLE IF NOT EXISTS library_books (
+  id               SERIAL PRIMARY KEY,
+  title            VARCHAR(200) NOT NULL,
+  author           VARCHAR(150) NOT NULL,
+  category         VARCHAR(50)  NOT NULL DEFAULT 'General',
+  isbn             VARCHAR(20),
+  total_copies     INT NOT NULL DEFAULT 1,
+  available_copies INT NOT NULL DEFAULT 1,
+  location         VARCHAR(50),
+  added_at         TIMESTAMP DEFAULT NOW()
+);
+
+-- Notifications Table (if not exists)
+CREATE TABLE IF NOT EXISTS notifications (
+  id         SERIAL PRIMARY KEY,
+  user_id    INT REFERENCES users(id) ON DELETE CASCADE,
+  title      VARCHAR(200) NOT NULL,
+  message    TEXT,
+  type       VARCHAR(50) DEFAULT 'info',
+  read       BOOLEAN DEFAULT FALSE,
+  link       VARCHAR(200),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Drop Requests Table (if not exists)
+CREATE TABLE IF NOT EXISTS drop_requests (
+  id           SERIAL PRIMARY KEY,
+  student_id   VARCHAR(30) REFERENCES students(id) ON DELETE CASCADE,
+  course_code  VARCHAR(20) REFERENCES courses(code) ON DELETE CASCADE,
+  reason       TEXT,
+  status       VARCHAR(20) DEFAULT 'Pending',
+  requested_at TIMESTAMP DEFAULT NOW(),
+  reviewed_at  TIMESTAMP,
+  reviewed_by  INT REFERENCES users(id)
+);
+
+-- Deleted Backups Table (if not exists)
+CREATE TABLE IF NOT EXISTS deleted_backups (
+  id          SERIAL PRIMARY KEY,
+  table_name  VARCHAR(50) NOT NULL,
+  record_id   TEXT NOT NULL,
+  record_data JSONB NOT NULL,
+  deleted_by  INT REFERENCES users(id),
+  deleted_at  TIMESTAMP DEFAULT NOW()
+);
+
 -- Library Books
 INSERT INTO library_books (title, author, category, isbn, total_copies, available_copies, location) VALUES
 ('Database System Concepts',   'Silberschatz, Korth', 'Computer Science','978-0-07-802215-9',5,3,'Section A, Shelf 2'),
