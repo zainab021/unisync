@@ -73,14 +73,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "UniSync — University Management Portal" },
+      { name: "description", content: "UniSync — Complete University Management System for Students, Teachers and Admin." },
+      { name: "author", content: "UniSync" },
+      { property: "og:title", content: "UniSync University Portal" },
+      { property: "og:description", content: "Manage timetables, attendance, grades, fees and more." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

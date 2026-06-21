@@ -15,8 +15,10 @@ async function sendEmail({ to, subject, html }) {
   }
   // If sending to fake/university email, redirect to real admin email
   if (!to || to.includes("@university.edu")) {
+    console.log(`[Email redirect] ${to} → ${process.env.EMAIL_USER}`);
     to = process.env.EMAIL_USER;
   }
+  console.log(`[Email attempting] To: ${to} | Subject: ${subject}`);
   try {
     await transporter.sendMail({
       from: `"UniSync University" <${process.env.EMAIL_USER}>`,
@@ -24,9 +26,9 @@ async function sendEmail({ to, subject, html }) {
       subject,
       html,
     });
-    console.log(`[Email sent] To: ${to} | ${subject}`);
+    console.log(`[Email sent ✅] To: ${to} | ${subject}`);
   } catch (err) {
-    console.error(`[Email failed] ${err.message}`);
+    console.error(`[Email failed ❌] ${err.message}`);
   }
 }
 
