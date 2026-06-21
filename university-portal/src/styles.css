@@ -143,30 +143,21 @@
   }
 }
 
-/* Light Mode Override */
+/* Light Mode — CSS invert trick (works on all pages automatically) */
 html.light-mode {
-  background-color: #f8fafc;
-  color: #1e293b;
+  filter: invert(1) hue-rotate(180deg);
 }
 
-html.light-mode body {
-  background-color: #f8fafc;
+/* Re-invert images/videos so they look normal */
+html.light-mode img,
+html.light-mode video,
+html.light-mode svg image {
+  filter: invert(1) hue-rotate(180deg);
 }
 
-html.light-mode aside {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-}
-
-html.light-mode aside a {
-  color: #475569 !important;
-}
-
-html.light-mode aside a:hover {
-  background-color: #f1f5f9 !important;
-  color: #1e293b !important;
-}
-
-html.light-mode main {
-  background-color: #f8fafc;
+/* Keep amber/gold colors correct */
+html.light-mode .text-amber-400,
+html.light-mode .text-amber-300,
+html.light-mode .text-amber-500 {
+  filter: invert(1) hue-rotate(180deg);
 }
