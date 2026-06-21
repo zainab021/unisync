@@ -27,12 +27,21 @@ export function Navbar() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:5000/api/notices", {
+    // Fetch in-app notifications
+    fetch("http://localhost:5000/api/notifications", {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.json())
-      .then(d => setNotices(Array.isArray(d) ? d.slice(0, 8) : []))
+      .then(d => setNotices(Array.isArray(d) ? d : []))
       .catch(() => {});
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetch("http://localhost:5000/api/notifications", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token") ?? ""}` }
+      }).then(r => r.json()).then(d => setNotices(Array.isArray(d) ? d : [])).catch(() => {});
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -48,7 +57,7 @@ export function Navbar() {
     navigate({ to: "/" });
   }
 
-  const unread = notices.filter(n => !readIds.has(n.id)).length;
+  const unread = notices.filter(n => !n.read && !readIds.has(n.id)).length;
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-white/5 bg-slate-950/80 px-6 backdrop-blur-xl">
@@ -77,9 +86,14 @@ export function Navbar() {
           {open && (
             <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
-                <p className="text-sm font-semibold text-white">Notices</p>
+                <p className="text-sm font-semibold text-white">Notifications</p>
                 <button
-                  onClick={() => setReadIds(new Set(notices.map(n => n.id)))}
+                  onClick={async () => {
+                    const token = localStorage.getItem("token") ?? "";
+                    await fetch("http://localhost:5000/api/notifications/read-all/all", { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+                    setNotices(prev => prev.map(n => ({ ...n, read: true })));
+                    setReadIds(new Set(notices.map(n => n.id)));
+                  }}
                   className="text-xs text-amber-400 hover:underline"
                 >
                   Mark all read
@@ -87,23 +101,33 @@ export function Navbar() {
               </div>
               <ul className="max-h-72 overflow-y-auto">
                 {notices.length === 0 ? (
-                  <li className="px-4 py-6 text-center text-xs text-slate-500">No notices yet.</li>
-                ) : notices.map(n => (
-                  <li
-                    key={n.id}
-                    onClick={() => setReadIds(prev => new Set([...prev, n.id]))}
-                    className={cn(
-                      "flex items-start gap-3 border-b border-white/5 px-4 py-3 hover:bg-white/5 cursor-pointer",
-                      !readIds.has(n.id) && "bg-amber-500/5"
-                    )}
-                  >
-                    <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", readIds.has(n.id) ? "bg-slate-600" : "bg-amber-400")} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-200 truncate">{n.title}</p>
-                      <p className="text-xs text-slate-500">{n.category} · {new Date(n.created_at).toLocaleDateString()}</p>
-                    </div>
-                  </li>
-                ))}
+                  <li className="px-4 py-6 text-center text-xs text-slate-500">No notifications yet.</li>
+                ) : notices.map(n => {
+                  const isRead = n.read || readIds.has(n.id);
+                  const dotColor = n.type === "success" ? "bg-emerald-400" : n.type === "danger" ? "bg-rose-400" : n.type === "warning" ? "bg-amber-400" : "bg-sky-400";
+                  return (
+                    <li
+                      key={n.id}
+                      onClick={async () => {
+                        const token = localStorage.getItem("token") ?? "";
+                        await fetch(`http://localhost:5000/api/notifications/${n.id}/read`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+                        setNotices(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+                        setReadIds(prev => new Set([...prev, n.id]));
+                      }}
+                      className={cn(
+                        "flex items-start gap-3 border-b border-white/5 px-4 py-3 hover:bg-white/5 cursor-pointer transition",
+                        !isRead && "bg-amber-500/5"
+                      )}
+                    >
+                      <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", isRead ? "bg-slate-600" : dotColor)} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-200 truncate">{n.title}</p>
+                        <p className="text-xs text-slate-500 truncate">{n.message}</p>
+                        <p className="text-[10px] text-slate-600 mt-0.5">{new Date(n.created_at).toLocaleString()}</p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

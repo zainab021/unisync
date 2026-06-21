@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require("../db");
 const { verifyToken, requireRole } = require("../middleware/auth");
 const email = require("../utils/email");
+const { createNotification } = require("./notifications");
 
 // GET /api/room-requests — Admin: all requests
 router.get("/", verifyToken, requireRole("admin"), async (req, res) => {
@@ -58,6 +59,17 @@ router.post("/", verifyToken, requireRole("teacher"), async (req, res) => {
     );
     const adminInfo = await pool.query("SELECT email FROM users WHERE role='admin' LIMIT 1");
     if (adminInfo.rows[0] && teacherInfo.rows[0]) {
+      // In-app notification for admin
+      const adminUser = await pool.query("SELECT id FROM users WHERE role='admin' LIMIT 1");
+      if (adminUser.rows[0]) {
+        createNotification({
+          user_id: adminUser.rows[0].id,
+          title:   "New Room Request",
+          message: `${teacherInfo.rows[0].name} requested ${room} on ${date}`,
+          type:    "info",
+          link:    "/admin/room-approvals",
+        });
+      }
       email.sendEmail({
         to: adminInfo.rows[0].email,
         subject: `Room Request — ${room} by ${teacherInfo.rows[0].name}`,
@@ -96,8 +108,15 @@ router.patch("/:id/status", verifyToken, requireRole("admin"), async (req, res) 
     // Email teacher
     const rr = result.rows[0];
     if (rr) {
-      const t = await pool.query("SELECT u.email, t.name FROM teachers t JOIN users u ON t.user_id=u.id WHERE t.id=$1", [rr.teacher_id]);
+      const t = await pool.query("SELECT u.id, u.email, t.name FROM teachers t JOIN users u ON t.user_id=u.id WHERE t.id=$1", [rr.teacher_id]);
       if (t.rows[0]) {
+        createNotification({
+          user_id: t.rows[0].id,
+          title:   `Room Request ${status}`,
+          message: `Your request for ${rr.room} on ${rr.date} has been ${status.toLowerCase()}.`,
+          type:    status === "Approved" ? "success" : "danger",
+          link:    "/teacher/room-request",
+        });
         email.roomRequestReviewed({ teacherEmail: t.rows[0].email, teacherName: t.rows[0].name, room: rr.room, date: rr.date, slot: rr.slot, status });
       }
     }

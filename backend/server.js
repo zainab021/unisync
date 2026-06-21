@@ -63,7 +63,8 @@ app.use("/api/events",       require("./routes/events"));
 app.use("/api/feedback",     require("./routes/feedback"));
 app.use("/api/library",      require("./routes/library"));
 app.use("/api/doc-requests",  require("./routes/document-requests"));
-app.use("/api/drop-requests", require("./routes/drop-requests"));
+app.use("/api/drop-requests",   require("./routes/drop-requests"));
+app.use("/api/notifications",   require("./routes/notifications"));
 
 // ── Health check ────────────────────────────────────────────
 app.get("/", (req, res) => {

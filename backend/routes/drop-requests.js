@@ -3,6 +3,7 @@ const router  = express.Router();
 const pool    = require("../db");
 const { verifyToken, requireRole } = require("../middleware/auth");
 const email   = require("../utils/email");
+const { createNotification } = require("./notifications");
 
 // POST /api/drop-requests — student requests drop
 router.post("/", verifyToken, requireRole("student"), async (req, res) => {
@@ -31,6 +32,18 @@ router.post("/", verifyToken, requireRole("student"), async (req, res) => {
       "INSERT INTO drop_requests (student_id, course_code, reason) VALUES ($1,$2,$3) RETURNING *",
       [sid, course_code, reason || ""]
     );
+
+    // Notify admin in-app
+    const adminUser = await pool.query("SELECT id FROM users WHERE role='admin' LIMIT 1");
+    if (adminUser.rows[0]) {
+      createNotification({
+        user_id: adminUser.rows[0].id,
+        title:   "New Drop Request",
+        message: `${stuQ.rows[0]?.name || "A student"} wants to drop ${courseQ.rows[0]?.name || course_code}`,
+        type:    "warning",
+        link:    "/admin/enrollment",
+      });
+    }
 
     // Email admin
     const adminQ = await pool.query("SELECT email FROM users WHERE role='admin' LIMIT 1");
@@ -99,10 +112,17 @@ router.patch("/:id/approve", verifyToken, requireRole("admin"), async (req, res)
       [req.user.id, req.params.id]
     );
 
-    // Email student
-    const stuEmail = await pool.query("SELECT u.email, s.name FROM students s JOIN users u ON s.user_id=u.id WHERE s.id=$1", [dr.rows[0].student_id]);
+    // Notify + Email student
+    const stuEmail = await pool.query("SELECT u.id, u.email, s.name FROM students s JOIN users u ON s.user_id=u.id WHERE s.id=$1", [dr.rows[0].student_id]);
     const cName    = await pool.query("SELECT name FROM courses WHERE code=$1", [dr.rows[0].course_code]);
     if (stuEmail.rows[0]) {
+      createNotification({
+        user_id: stuEmail.rows[0].id,
+        title:   "Drop Request Approved ✅",
+        message: `Your request to drop ${cName.rows[0]?.name} has been approved.`,
+        type:    "success",
+        link:    "/student/courses",
+      });
       email.dropRequestReviewed({
         studentEmail: stuEmail.rows[0].email,
         studentName:  stuEmail.rows[0].name,
@@ -127,10 +147,17 @@ router.patch("/:id/reject", verifyToken, requireRole("admin"), async (req, res) 
       [req.user.id, req.params.id]
     );
 
-    // Email student
-    const stuEmail = await pool.query("SELECT u.email, s.name FROM students s JOIN users u ON s.user_id=u.id WHERE s.id=$1", [dr.rows[0].student_id]);
+    // Notify + Email student
+    const stuEmail = await pool.query("SELECT u.id, u.email, s.name FROM students s JOIN users u ON s.user_id=u.id WHERE s.id=$1", [dr.rows[0].student_id]);
     const cName    = await pool.query("SELECT name FROM courses WHERE code=$1", [dr.rows[0].course_code]);
     if (stuEmail.rows[0]) {
+      createNotification({
+        user_id: stuEmail.rows[0].id,
+        title:   "Drop Request Rejected ❌",
+        message: `Your request to drop ${cName.rows[0]?.name} was rejected. You remain enrolled.`,
+        type:    "danger",
+        link:    "/student/courses",
+      });
       email.dropRequestReviewed({
         studentEmail: stuEmail.rows[0].email,
         studentName:  stuEmail.rows[0].name,
