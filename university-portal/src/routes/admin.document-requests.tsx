@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import StatusBadge from "@/components/StatusBadge";
 
@@ -16,6 +17,7 @@ const toneMap: Record<string, any> = { Pending: "warning", Processing: "info", "
 
 function AdminDocumentRequestsPage() {
   const [docs, setDocs]     = useState<DocReq[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchDocs(); }, []);
@@ -56,6 +58,11 @@ function AdminDocumentRequestsPage() {
         ))}
       </div>
 
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+        <Search className="h-4 w-4 text-slate-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by student or document type..."
+          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+      </div>
       {loading ? (
         <p className="py-8 text-center text-sm text-slate-500">Loading requests...</p>
       ) : docs.length === 0 ? (
@@ -74,7 +81,7 @@ function AdminDocumentRequestsPage() {
               </tr>
             </thead>
             <tbody>
-              {docs.map(d => (
+              {docs.filter(d => !search || d.student_name?.toLowerCase().includes(search.toLowerCase()) || d.type?.toLowerCase().includes(search.toLowerCase())).map(d => (
                 <tr key={d.id} className="border-t border-white/5 hover:bg-white/[0.03]">
                   <td className="px-4 py-3 font-mono text-xs text-amber-300">{d.id}</td>
                   <td className="px-4 py-3 font-medium text-white">{d.student_name || "—"}</td>

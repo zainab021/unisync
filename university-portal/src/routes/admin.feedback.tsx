@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
+import { Search } from "lucide-react";
 
 export const Route = createFileRoute("/admin/feedback")({ component: AdminFeedbackPage });
 
@@ -20,12 +21,15 @@ function Stars({ rating }: { rating: number }) {
 function AdminFeedbackPage() {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [filter, setFilter]     = useState(0);
+  const [search, setSearch]     = useState("");
 
   useEffect(() => {
     fetch(API, { headers: h() }).then(r => r.json()).then(d => setFeedback(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
-  const filtered = filter === 0 ? feedback : feedback.filter(f => f.rating === filter);
+  const filtered = feedback
+    .filter(f => filter === 0 || f.rating === filter)
+    .filter(f => !search || f.teacher_name?.toLowerCase().includes(search.toLowerCase()) || f.course_name?.toLowerCase().includes(search.toLowerCase()));
   const avg      = feedback.length ? (feedback.reduce((s, f) => s + f.rating, 0) / feedback.length).toFixed(1) : "—";
 
   return (
@@ -42,6 +46,11 @@ function AdminFeedbackPage() {
         </div>
       </div>
 
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+        <Search className="h-4 w-4 text-slate-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by teacher or course..."
+          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+      </div>
       {/* Rating filter */}
       <div className="mb-4 flex gap-2">
         <button onClick={() => setFilter(0)} className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${filter === 0 ? "border-amber-500/40 bg-amber-500/15 text-amber-300" : "border-white/10 text-slate-400 hover:text-white"}`}>All</button>

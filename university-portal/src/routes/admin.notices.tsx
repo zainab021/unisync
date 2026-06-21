@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "@/components/Modal";
 
@@ -19,6 +19,7 @@ type Notice = { id: number; title: string; body: string; category: string; prior
 
 function AdminNoticesPage() {
   const [notices, setNotices]   = useState<Notice[]>([]);
+  const [search, setSearch]     = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]   = useState<Notice | null>(null);
   const [form, setForm]         = useState({ title: "", category: "Academic", body: "", priority: "Medium" });
@@ -71,9 +72,14 @@ function AdminNoticesPage() {
           <Plus className="h-4 w-4" /> Post Notice
         </button>
       </div>
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+        <Search className="h-4 w-4 text-slate-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search notices..."
+          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+      </div>
       <div className="space-y-3">
-        {notices.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No notices yet.</p>}
-        {notices.map(n => {
+        {notices.filter(n => !search || n.title.toLowerCase().includes(search.toLowerCase()) || n.body.toLowerCase().includes(search.toLowerCase())).length === 0 && <p className="py-8 text-center text-sm text-slate-500">No notices found.</p>}
+        {notices.filter(n => !search || n.title.toLowerCase().includes(search.toLowerCase()) || n.body.toLowerCase().includes(search.toLowerCase())).map(n => {
           const pc = PRIORITY_COLORS[n.priority] || "amber";
           const cc = CAT_COLORS[n.category] || "slate";
           return (

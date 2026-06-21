@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Plus, Trash2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle, AlertTriangle, Search } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
@@ -31,6 +31,7 @@ function AdminEnrollmentPage() {
   const [loading, setLoading]         = useState(false);
   const [filter, setFilter]           = useState("All");
   const [tab, setTab]                 = useState<"enrollments" | "drops">("enrollments");
+  const [search, setSearch]           = useState("");
 
   useEffect(() => {
     fetchEnrollments();
@@ -97,7 +98,9 @@ function AdminEnrollmentPage() {
 
   const pendingDrops = dropReqs.filter(d => d.status === "Pending");
 
-  const filtered = filter === "All" ? enrollments : enrollments.filter(e => e.status === filter);
+  const filtered = enrollments
+    .filter(e => filter === "All" || e.status === filter)
+    .filter(e => !search || e.student_name?.toLowerCase().includes(search.toLowerCase()) || e.course_name?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div>
@@ -176,6 +179,11 @@ function AdminEnrollmentPage() {
 
       {/* ENROLLMENTS TAB */}
       {tab === "enrollments" && <>
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+        <Search className="h-4 w-4 text-slate-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by student or course..."
+          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+      </div>
       {/* Stats */}
       <div className="mb-6 grid grid-cols-3 gap-4">
         {[

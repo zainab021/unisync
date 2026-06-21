@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Eye } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
@@ -18,6 +18,7 @@ const toneMap: Record<string, "success" | "warning" | "danger"> = { Paid: "succe
 function AdminFeesPage() {
   const [fees, setFees]     = useState<Fee[]>([]);
   const [filter, setFilter] = useState<FilterTab>("All");
+  const [search, setSearch] = useState("");
   const [viewFee, setViewFee] = useState<Fee | null>(null);
 
   useEffect(() => { fetchFees(); }, []);
@@ -38,7 +39,9 @@ function AdminFeesPage() {
     } catch { toast.error("Failed to update"); }
   }
 
-  const filtered = filter === "All" ? fees : fees.filter(f => f.status === filter);
+  const filtered = fees
+    .filter(f => filter === "All" || f.status === filter)
+    .filter(f => !search || f.student_name?.toLowerCase().includes(search.toLowerCase()) || f.id?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div>
@@ -54,6 +57,11 @@ function AdminFeesPage() {
             <p className="text-xs text-slate-500">{s.label}</p>
           </div>
         ))}
+      </div>
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+        <Search className="h-4 w-4 text-slate-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by student name or ID..."
+          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
       </div>
       <div className="mb-4 flex gap-1 border-b border-white/10">
         {(["All", "Paid", "Pending", "Overdue"] as FilterTab[]).map(t => (

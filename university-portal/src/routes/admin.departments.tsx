@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "@/components/Modal";
 
@@ -19,6 +19,7 @@ function AdminDepartmentsPage() {
   const [editing, setEditing]   = useState<Dept | null>(null);
   const [form, setForm]         = useState<Dept>(EMPTY);
   const [loading, setLoading]   = useState(false);
+  const [search, setSearch]     = useState("");
 
   useEffect(() => { fetchDepts(); }, []);
 
@@ -72,12 +73,18 @@ function AdminDepartmentsPage() {
         </button>
       </div>
 
-      {depts.length === 0 && (
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+        <Search className="h-4 w-4 text-slate-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or HoD..."
+          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+      </div>
+
+      {depts.filter(d => !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.hod?.toLowerCase().includes(search.toLowerCase())).length === 0 && (
         <p className="py-8 text-center text-sm text-slate-500">No departments found.</p>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
-        {depts.map(d => (
+        {depts.filter(d => !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.hod?.toLowerCase().includes(search.toLowerCase())).map(d => (
           <div key={d.id} className="rounded-2xl border border-white/10 bg-white/5 p-5">
             <div className="mb-3 flex items-start justify-between">
               <div>

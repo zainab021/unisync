@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
@@ -18,6 +18,7 @@ const EMPTY: Course = { code: "", name: "", department: "CS", teacher_id: "", cr
 
 function AdminCoursesPage() {
   const [courses, setCourses]   = useState<Course[]>([]);
+  const [search, setSearch]     = useState("");
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]   = useState<Course | null>(null);
@@ -80,6 +81,11 @@ function AdminCoursesPage() {
           <Plus className="h-4 w-4" /> Add Course
         </button>
       </div>
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+        <Search className="h-4 w-4 text-slate-500" />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by code or name..."
+          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+      </div>
       <div className="overflow-hidden rounded-xl bg-slate-900/50">
         <table className="w-full text-sm">
           <thead>
@@ -91,7 +97,7 @@ function AdminCoursesPage() {
           </thead>
           <tbody>
             {courses.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-sm text-slate-500">No courses found.</td></tr>}
-            {courses.map(c => (
+            {courses.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase())).map(c => (
               <tr key={c.code} className="border-t border-white/5 hover:bg-white/[0.03]">
                 <td className="px-4 py-3 font-mono text-amber-300">{c.code}</td>
                 <td className="px-4 py-3 font-medium text-white">{c.name}</td>
