@@ -10,12 +10,12 @@ router.get("/", verifyToken, async (req, res) => {
                  FROM enrollments e
                  JOIN students s ON e.student_id = s.id
                  JOIN courses c  ON e.course_code = c.code`;
-    const params: any[] = [];
+    const params = [];
     if (course) { query += ` WHERE e.course_code = $1`; params.push(course); }
     query += ` ORDER BY e.created_at DESC`;
     const result = await pool.query(query, params);
     res.json(result.rows);
-  } catch (err) { res.status(500).json({ message: (err as any).message }); }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 router.post("/", verifyToken, requireRole("admin"), async (req, res) => {

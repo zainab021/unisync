@@ -40,8 +40,9 @@ const studentLinks = [
   { to: "/student/library", label: "Library", icon: Library },
   { to: "/student/notices", label: "Notices", icon: Megaphone },
   { to: "/student/events", label: "Events", icon: CalendarDays },
-  { to: "/student/feedback", label: "Feedback", icon: Star },
-  { to: "/student/messages", label: "Messages", icon: MessageSquare },
+  { to: "/student/feedback",  label: "Feedback",  icon: Star },
+  { to: "/student/messages",  label: "Messages",  icon: MessageSquare },
+  { to: "/student/documents", label: "Documents", icon: FolderOpen },
 ];
 
 const teacherLinks = [

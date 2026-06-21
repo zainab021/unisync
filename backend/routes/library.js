@@ -23,7 +23,7 @@ router.get("/", verifyToken, async (req, res) => {
   const { search, category } = req.query;
   try {
     let query  = "SELECT * FROM library_books WHERE 1=1";
-    const params: any[] = [];
+    const params = [];
     if (search) { params.push(`%${search}%`); query += ` AND (title ILIKE $${params.length} OR author ILIKE $${params.length})`; }
     if (category && category !== "All") { params.push(category); query += ` AND category = $${params.length}`; }
     query += " ORDER BY title";
@@ -36,7 +36,7 @@ router.get("/", verifyToken, async (req, res) => {
 router.get("/categories", verifyToken, async (req, res) => {
   try {
     const result = await pool.query("SELECT DISTINCT category FROM library_books ORDER BY category");
-    res.json(result.rows.map((r: any) => r.category));
+    res.json(result.rows.map(r => r.category));
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

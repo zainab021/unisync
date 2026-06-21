@@ -62,6 +62,7 @@ app.use("/api/messages",     require("./routes/messages"));
 app.use("/api/events",       require("./routes/events"));
 app.use("/api/feedback",     require("./routes/feedback"));
 app.use("/api/library",      require("./routes/library"));
+app.use("/api/doc-requests", require("./routes/document-requests"));
 
 // ── Health check ────────────────────────────────────────────
 app.get("/", (req, res) => {

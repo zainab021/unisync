@@ -12,10 +12,17 @@ export function Navbar() {
   const [readIds, setReadIds] = useState<Set<number>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
 
-  const name   = localStorage.getItem("userName") ?? "User";
-  const role   = localStorage.getItem("role") ?? "student";
+  const name   = localStorage.getItem("userName") || "User";
+  const role   = localStorage.getItem("role") || "student";
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
-  const avatar = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  const avatarLetters = name
+    .split(" ")
+    .filter(w => w.length > 0 && isNaN(Number(w[0])))
+    .map(w => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  const avatar = avatarLetters || name.slice(0, 2).toUpperCase() || "U";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
