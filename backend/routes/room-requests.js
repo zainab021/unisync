@@ -50,6 +50,33 @@ router.post("/", verifyToken, requireRole("teacher"), async (req, res) => {
       "INSERT INTO room_requests (id, teacher_id, room, date, slot, reason) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
       [id, teacher.rows[0].id, room, date, slot, reason]
     );
+
+    // Email admin about new room request
+    const teacherInfo = await pool.query(
+      "SELECT t.name, u.email FROM teachers t JOIN users u ON t.user_id=u.id WHERE t.id=$1",
+      [teacher.rows[0].id]
+    );
+    const adminInfo = await pool.query("SELECT email FROM users WHERE role='admin' LIMIT 1");
+    if (adminInfo.rows[0] && teacherInfo.rows[0]) {
+      email.sendEmail({
+        to: adminInfo.rows[0].email,
+        subject: `Room Request — ${room} by ${teacherInfo.rows[0].name}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px">
+            <h2 style="color:#F59E0B">UniSync — New Room Request</h2>
+            <p><b>${teacherInfo.rows[0].name}</b> has requested a room.</p>
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:8px;color:#666">Room:</td><td style="padding:8px"><b>${room}</b></td></tr>
+              <tr><td style="padding:8px;color:#666">Date:</td><td style="padding:8px"><b>${date}</b></td></tr>
+              <tr><td style="padding:8px;color:#666">Slot:</td><td style="padding:8px"><b>${slot}</b></td></tr>
+              <tr><td style="padding:8px;color:#666">Reason:</td><td style="padding:8px">${reason}</td></tr>
+            </table>
+            <a href="http://localhost:5173/admin/room-approvals" style="background:#F59E0B;color:#000;padding:10px 20px;text-decoration:none;border-radius:6px;display:inline-block;margin-top:10px">Review Request</a>
+          </div>
+        `,
+      });
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: err.message });
