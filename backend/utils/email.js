@@ -13,6 +13,10 @@ async function sendEmail({ to, subject, html }) {
     console.log(`[Email skipped — no credentials] To: ${to} | Subject: ${subject}`);
     return;
   }
+  // If sending to fake/university email, redirect to real admin email
+  if (!to || to.includes("@university.edu")) {
+    to = process.env.EMAIL_USER;
+  }
   try {
     await transporter.sendMail({
       from: `"UniSync University" <${process.env.EMAIL_USER}>`,
