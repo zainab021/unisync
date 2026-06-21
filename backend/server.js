@@ -2,14 +2,36 @@ const express    = require("express");
 const cors       = require("cors");
 const helmet     = require("helmet");
 const rateLimit  = require("express-rate-limit");
+const http       = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config();
 
-const app = express();
+const app    = express();
+const server = http.createServer(app);
 
-// ── Security Headers ────────────────────────────────────────
+// ── Socket.io ───────────────────────────────────────────────────────
+const io = new Server(server, {
+  cors: { origin: "*", methods: ["GET","POST"] }
+});
+
+// Make io available to routes
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  const userId = socket.handshake.query.userId;
+  if (userId) socket.join(`user_${userId}`);
+  socket.on("disconnect", () => {});
+});
+
+// Export helper to emit to specific user
+global.emitToUser = (userId, event, data) => {
+  io.to(`user_${userId}`).emit(event, data);
+};
+
+// ── Security Headers ────────────────────────────────────────────────
 app.use(helmet());
 
-// ── CORS ────────────────────────────────────────────────────
+// ── CORS ────────────────────────────────────────────────────────────
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : ["http://localhost:5173", "http://localhost:5174", "http://localhost:8080"];
@@ -17,30 +39,21 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json({ limit: "10kb" }));
 
-// ── Rate Limiters ───────────────────────────────────────────
+// ── Rate Limiters ───────────────────────────────────────────────────
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
+  windowMs: 15 * 60 * 1000, max: 10,
   message: { message: "Too many login attempts. Try again after 15 minutes." },
-  standardHeaders: true,
-  legacyHeaders: false,
 });
+const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 200 });
 
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 200,
-  message: { message: "Too many requests." },
-});
-
-app.use("/api/auth/login",    loginLimiter);
+app.use("/api/auth/login", loginLimiter);
 app.use("/api/backups/verify-pin", rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
+  windowMs: 15 * 60 * 1000, max: 5,
   message: { message: "Too many PIN attempts. Try again after 15 minutes." },
 }));
 app.use("/api/", apiLimiter);
 
-// ── Routes ─────────────────────────────────────────────────
+// ── Routes ─────────────────────────────────────────────────────────
 app.use("/api/auth",          require("./routes/auth"));
 app.use("/api/students",      require("./routes/students"));
 app.use("/api/teachers",      require("./routes/teachers"));
@@ -58,32 +71,31 @@ app.use("/api/grades",        require("./routes/grades"));
 app.use("/api/leave-requests",require("./routes/leave-requests"));
 app.use("/api/enrollment",    require("./routes/enrollment"));
 app.use("/api/dashboard",     require("./routes/dashboard"));
-app.use("/api/messages",     require("./routes/messages"));
-app.use("/api/events",       require("./routes/events"));
-app.use("/api/feedback",     require("./routes/feedback"));
-app.use("/api/library",      require("./routes/library"));
+app.use("/api/messages",      require("./routes/messages"));
+app.use("/api/events",        require("./routes/events"));
+app.use("/api/feedback",      require("./routes/feedback"));
+app.use("/api/library",       require("./routes/library"));
 app.use("/api/doc-requests",  require("./routes/document-requests"));
-app.use("/api/drop-requests",   require("./routes/drop-requests"));
-app.use("/api/notifications",   require("./routes/notifications"));
+app.use("/api/drop-requests", require("./routes/drop-requests"));
+app.use("/api/notifications", require("./routes/notifications"));
+app.use("/api/search",        require("./routes/search"));
 
-// ── Health check ────────────────────────────────────────────
+// ── Health check ────────────────────────────────────────────────────
 app.get("/", (req, res) => {
   res.json({ message: "UniSync University Portal API", version: "1.0.0" });
 });
 
-// ── 404 ─────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
-});
+// ── 404 ─────────────────────────────────────────────────────────────
+app.use((req, res) => res.status(404).json({ message: "Route not found" }));
 
-// ── Error handler ───────────────────────────────────────────
+// ── Error handler ───────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Internal server error" });
 });
 
-// ── Start ────────────────────────────────────────────────────
+// ── Start ────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 UniSync server running on http://localhost:${PORT}`);
 });

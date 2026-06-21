@@ -142,3 +142,31 @@
     color: var(--color-foreground);
   }
 }
+
+/* Light Mode Override */
+html.light-mode {
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+html.light-mode body {
+  background-color: #f8fafc;
+}
+
+html.light-mode aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.light-mode aside a {
+  color: #475569 !important;
+}
+
+html.light-mode aside a:hover {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+html.light-mode main {
+  background-color: #f8fafc;
+}

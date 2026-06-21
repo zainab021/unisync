@@ -35,10 +35,14 @@ module.exports = router;
 // ── Helper to create notification ──────────────────────────────────
 async function createNotification({ user_id, title, message, type = "info", link = "" }) {
   try {
-    await pool.query(
-      "INSERT INTO notifications (user_id, title, message, type, link) VALUES ($1,$2,$3,$4,$5)",
+    const result = await pool.query(
+      "INSERT INTO notifications (user_id, title, message, type, link) VALUES ($1,$2,$3,$4,$5) RETURNING *",
       [user_id, title, message, type, link]
     );
+    // Real-time push via Socket.io
+    if (global.emitToUser) {
+      global.emitToUser(user_id, "notification", result.rows[0]);
+    }
   } catch (err) {
     console.error("[Notification failed]", err.message);
   }

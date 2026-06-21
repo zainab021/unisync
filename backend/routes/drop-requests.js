@@ -4,6 +4,7 @@ const pool    = require("../db");
 const { verifyToken, requireRole } = require("../middleware/auth");
 const email   = require("../utils/email");
 const { createNotification } = require("./notifications");
+const { sendWhatsApp }      = require("../utils/whatsapp");
 
 // POST /api/drop-requests — student requests drop
 router.post("/", verifyToken, requireRole("student"), async (req, res) => {
@@ -44,6 +45,9 @@ router.post("/", verifyToken, requireRole("student"), async (req, res) => {
         link:    "/admin/enrollment",
       });
     }
+
+    // WhatsApp admin
+    sendWhatsApp(`UniSync Alert: ${stuQ.rows[0]?.name} wants to drop ${courseQ.rows[0]?.name}. Login to approve/reject.`);
 
     // Email admin
     const adminQ = await pool.query("SELECT email FROM users WHERE role='admin' LIMIT 1");

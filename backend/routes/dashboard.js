@@ -3,6 +3,45 @@ const router  = express.Router();
 const pool    = require("../db");
 const { verifyToken } = require("../middleware/auth");
 
+// GET /api/dashboard/analytics — charts data
+router.get("/analytics", verifyToken, async (req, res) => {
+  try {
+    // Fee stats for pie chart
+    const feeStats = await pool.query(`
+      SELECT status, COUNT(*) as count, SUM(amount) as total
+      FROM fees GROUP BY status
+    `);
+
+    // Enrollment by program
+    const programs = await pool.query(`
+      SELECT program, COUNT(*) as students
+      FROM students GROUP BY program ORDER BY students DESC
+    `);
+
+    // Attendance summary
+    const attendance = await pool.query(`
+      SELECT status, COUNT(*) as count FROM attendance GROUP BY status
+    `);
+
+    // Monthly enrollments (last 6 months)
+    const monthly = await pool.query(`
+      SELECT TO_CHAR(created_at,'Mon') as month,
+             EXTRACT(MONTH FROM created_at) as m,
+             COUNT(*) as enrollments
+      FROM enrollments
+      WHERE created_at >= NOW() - INTERVAL '6 months'
+      GROUP BY month, m ORDER BY m
+    `);
+
+    res.json({
+      feeStats:    feeStats.rows,
+      programs:    programs.rows,
+      attendance:  attendance.rows,
+      monthly:     monthly.rows,
+    });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // GET /api/dashboard/admin
 router.get("/admin", verifyToken, async (req, res) => {
   try {
