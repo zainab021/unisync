@@ -2,6 +2,7 @@ const express = require("express");
 const router  = express.Router();
 const pool    = require("../db");
 const { verifyToken, requireRole } = require("../middleware/auth");
+const email   = require("../utils/email");
 
 // POST /api/drop-requests — student requests drop
 router.post("/", verifyToken, requireRole("student"), async (req, res) => {
@@ -30,6 +31,19 @@ router.post("/", verifyToken, requireRole("student"), async (req, res) => {
       "INSERT INTO drop_requests (student_id, course_code, reason) VALUES ($1,$2,$3) RETURNING *",
       [sid, course_code, reason || ""]
     );
+
+    // Email admin
+    const adminQ = await pool.query("SELECT email FROM users WHERE role='admin' LIMIT 1");
+    const courseQ = await pool.query("SELECT name FROM courses WHERE code=$1", [course_code]);
+    const stuQ    = await pool.query("SELECT name FROM students WHERE id=$1", [sid]);
+    if (adminQ.rows[0]) {
+      email.dropRequestSubmitted({
+        studentName: stuQ.rows[0]?.name,
+        courseName:  courseQ.rows[0]?.name,
+        adminEmail:  adminQ.rows[0].email,
+      });
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -84,6 +98,19 @@ router.patch("/:id/approve", verifyToken, requireRole("admin"), async (req, res)
       "UPDATE drop_requests SET status='Approved', reviewed_at=NOW(), reviewed_by=$1 WHERE id=$2 RETURNING *",
       [req.user.id, req.params.id]
     );
+
+    // Email student
+    const stuEmail = await pool.query("SELECT u.email, s.name FROM students s JOIN users u ON s.user_id=u.id WHERE s.id=$1", [dr.rows[0].student_id]);
+    const cName    = await pool.query("SELECT name FROM courses WHERE code=$1", [dr.rows[0].course_code]);
+    if (stuEmail.rows[0]) {
+      email.dropRequestReviewed({
+        studentEmail: stuEmail.rows[0].email,
+        studentName:  stuEmail.rows[0].name,
+        courseName:   cName.rows[0]?.name,
+        status: "Approved",
+      });
+    }
+
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -99,6 +126,19 @@ router.patch("/:id/reject", verifyToken, requireRole("admin"), async (req, res) 
       "UPDATE drop_requests SET status='Rejected', reviewed_at=NOW(), reviewed_by=$1 WHERE id=$2 RETURNING *",
       [req.user.id, req.params.id]
     );
+
+    // Email student
+    const stuEmail = await pool.query("SELECT u.email, s.name FROM students s JOIN users u ON s.user_id=u.id WHERE s.id=$1", [dr.rows[0].student_id]);
+    const cName    = await pool.query("SELECT name FROM courses WHERE code=$1", [dr.rows[0].course_code]);
+    if (stuEmail.rows[0]) {
+      email.dropRequestReviewed({
+        studentEmail: stuEmail.rows[0].email,
+        studentName:  stuEmail.rows[0].name,
+        courseName:   cName.rows[0]?.name,
+        status: "Rejected",
+      });
+    }
+
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });

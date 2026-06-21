@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const { verifyToken, requireRole } = require("../middleware/auth");
+const email = require("../utils/email");
 
 // GET /api/room-requests — Admin: all requests
 router.get("/", verifyToken, requireRole("admin"), async (req, res) => {
@@ -65,6 +66,14 @@ router.patch("/:id/status", verifyToken, requireRole("admin"), async (req, res) 
       "UPDATE room_requests SET status=$1 WHERE id=$2 RETURNING *",
       [status, req.params.id]
     );
+    // Email teacher
+    const rr = result.rows[0];
+    if (rr) {
+      const t = await pool.query("SELECT u.email, t.name FROM teachers t JOIN users u ON t.user_id=u.id WHERE t.id=$1", [rr.teacher_id]);
+      if (t.rows[0]) {
+        email.roomRequestReviewed({ teacherEmail: t.rows[0].email, teacherName: t.rows[0].name, room: rr.room, date: rr.date, slot: rr.slot, status });
+      }
+    }
     if (result.rowCount === 0) return res.status(404).json({ message: "Not found" });
     res.json(result.rows[0]);
   } catch (err) {
