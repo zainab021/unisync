@@ -58,6 +58,10 @@ app.use("/api/grades",        require("./routes/grades"));
 app.use("/api/leave-requests",require("./routes/leave-requests"));
 app.use("/api/enrollment",    require("./routes/enrollment"));
 app.use("/api/dashboard",     require("./routes/dashboard"));
+app.use("/api/messages",     require("./routes/messages"));
+app.use("/api/events",       require("./routes/events"));
+app.use("/api/feedback",     require("./routes/feedback"));
+app.use("/api/library",      require("./routes/library"));
 
 // ── Health check ────────────────────────────────────────────
 app.get("/", (req, res) => {

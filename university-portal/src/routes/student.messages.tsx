@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Send } from "lucide-react";
-import { messageThreads } from "@/data/data";
+import { useState, useEffect, useRef } from "react";
+import { Send, Inbox, ArrowUpRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/student/messages")({
@@ -9,123 +8,150 @@ export const Route = createFileRoute("/student/messages")({
   component: MessagesPage,
 });
 
-type Msg = { from: "me" | "teacher"; text: string; at: string };
+const API = "http://localhost:5000/api/messages";
+const getToken = () => localStorage.getItem("token") ?? "";
+const h = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
+
+type Message = { id: number; from_id: number; to_id: number; body: string; read: boolean; created_at: string; sender_name?: string; receiver_name?: string; sender_role?: string; receiver_role?: string };
+type User    = { id: number; name: string; role: string; avatar: string };
 
 function MessagesPage() {
-  const [active, setActive] = useState(messageThreads[0].teacherId);
-  const [draft, setDraft] = useState("");
-  const [threads, setThreads] = useState(
-    messageThreads.map((t) => ({ ...t, messages: [...t.messages] as Msg[] })),
-  );
+  const [tab, setTab]         = useState<"inbox" | "sent" | "compose">("inbox");
+  const [inbox, setInbox]     = useState<Message[]>([]);
+  const [sent, setSent]       = useState<Message[]>([]);
+  const [users, setUsers]     = useState<User[]>([]);
+  const [toId, setToId]       = useState("");
+  const [body, setBody]       = useState("");
+  const [sending, setSending] = useState(false);
 
-  const current = threads.find((t) => t.teacherId === active)!;
+  useEffect(() => {
+    fetchInbox();
+    fetchSent();
+    fetch(`${API}/users`, { headers: h() }).then(r => r.json()).then(d => setUsers(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
 
-  const send = () => {
-    if (!draft.trim()) return;
-    const now = new Date().toISOString().slice(0, 16).replace("T", " ");
-    setThreads(threads.map((t) =>
-      t.teacherId === active ? { ...t, messages: [...t.messages, { from: "me", text: draft, at: now }] } : t,
-    ));
-    setDraft("");
-    toast.success("Message sent");
-  };
+  async function fetchInbox() {
+    fetch(`${API}/inbox`, { headers: h() }).then(r => r.json()).then(d => setInbox(Array.isArray(d) ? d : [])).catch(() => {});
+  }
+  async function fetchSent() {
+    fetch(`${API}/sent`, { headers: h() }).then(r => r.json()).then(d => setSent(Array.isArray(d) ? d : [])).catch(() => {});
+  }
+
+  async function markRead(id: number) {
+    await fetch(`${API}/${id}/read`, { method: "PATCH", headers: h() }).catch(() => {});
+    setInbox(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
+  }
+
+  async function deleteMsg(id: number) {
+    await fetch(`${API}/${id}`, { method: "DELETE", headers: h() }).catch(() => {});
+    setInbox(prev => prev.filter(m => m.id !== id));
+    setSent(prev => prev.filter(m => m.id !== id));
+    toast.success("Message deleted.");
+  }
+
+  async function handleSend() {
+    if (!toId || !body.trim()) { toast.error("Select recipient and write a message."); return; }
+    setSending(true);
+    try {
+      const res = await fetch(API, { method: "POST", headers: h(), body: JSON.stringify({ to_id: Number(toId), body }) });
+      if (!res.ok) throw new Error();
+      toast.success("Message sent.");
+      setBody(""); setToId(""); setTab("sent");
+      fetchSent();
+    } catch { toast.error("Failed to send."); }
+    setSending(false);
+  }
+
+  const unread = inbox.filter(m => !m.read).length;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Messages</h1>
-        <p className="mt-1 text-sm text-slate-400">Direct conversations with your teachers.</p>
+        <p className="mt-1 text-sm text-slate-400">Communicate with your teachers and university staff.</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[260px_1fr] h-[calc(100vh-15rem)] min-h-[500px]">
-        {/* Threads list */}
-        <div className="overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.02]">
-          <div className="border-b border-white/5 p-3">
-            <select
-              value={active}
-              onChange={(e) => setActive(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500/40"
-            >
-              {threads.map((t) => (
-                <option key={t.teacherId} value={t.teacherId} className="bg-slate-900">
-                  {t.teacher}
-                </option>
-              ))}
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-white/10">
+        {[
+          { key: "inbox",   label: `Inbox${unread > 0 ? ` (${unread})` : ""}`, icon: Inbox },
+          { key: "sent",    label: "Sent",    icon: ArrowUpRight },
+          { key: "compose", label: "Compose", icon: Send },
+        ].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key as any)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition ${tab === t.key ? "border-b-2 border-amber-500 text-amber-300" : "text-slate-400 hover:text-white"}`}>
+            <t.icon className="h-4 w-4" /> {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Inbox */}
+      {tab === "inbox" && (
+        <div className="space-y-2">
+          {inbox.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">No messages in inbox.</p> : inbox.map(m => (
+            <div key={m.id} onClick={() => markRead(m.id)}
+              className={`flex items-start gap-4 rounded-2xl border p-4 cursor-pointer transition ${!m.read ? "border-amber-500/30 bg-amber-500/5" : "border-white/10 bg-white/[0.02] hover:bg-white/5"}`}>
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-500/15 text-sm font-bold text-amber-400">
+                {m.sender_name?.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-white truncate">{m.sender_name}</p>
+                  <p className="text-xs text-slate-500 shrink-0">{new Date(m.created_at).toLocaleString()}</p>
+                </div>
+                <p className="mt-1 text-sm text-slate-400">{m.body}</p>
+                {!m.read && <span className="mt-1 inline-block rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-slate-900">New</span>}
+              </div>
+              <button onClick={e => { e.stopPropagation(); deleteMsg(m.id); }} className="shrink-0 rounded p-1.5 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Sent */}
+      {tab === "sent" && (
+        <div className="space-y-2">
+          {sent.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">No sent messages.</p> : sent.map(m => (
+            <div key={m.id} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-slate-400">To: <span className="font-semibold text-white">{m.receiver_name}</span> <span className="text-xs text-slate-600">({m.receiver_role})</span></p>
+                  <p className="text-xs text-slate-500 shrink-0">{new Date(m.created_at).toLocaleString()}</p>
+                </div>
+                <p className="mt-1 text-sm text-slate-300">{m.body}</p>
+              </div>
+              <button onClick={() => deleteMsg(m.id)} className="shrink-0 rounded p-1.5 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Compose */}
+      {tab === "compose" && (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-widest text-slate-400">To</label>
+            <select value={toId} onChange={e => setToId(e.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/40">
+              <option value="">— Select recipient —</option>
+              {users.map(u => <option key={u.id} value={u.id} className="bg-slate-900">{u.name} ({u.role})</option>)}
             </select>
           </div>
-          <ul>
-            {threads.map((t) => {
-              const last = t.messages[t.messages.length - 1];
-              return (
-                <li key={t.teacherId}>
-                  <button
-                    onClick={() => setActive(t.teacherId)}
-                    className={`w-full text-left p-3 border-b border-white/5 transition ${
-                      active === t.teacherId ? "bg-amber-500/10" : "hover:bg-white/[0.03]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-9 w-9 place-items-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-300">
-                        {t.teacher.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-white truncate">{t.teacher}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{t.course}</p>
-                      </div>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-400 truncate">{last?.text}</p>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-widest text-slate-400">Message</label>
+            <textarea rows={5} value={body} onChange={e => setBody(e.target.value)} placeholder="Write your message here..."
+              className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/40 placeholder:text-slate-600" />
+          </div>
+          <button onClick={handleSend} disabled={sending}
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-900 hover:bg-amber-400 disabled:opacity-50">
+            <Send className="h-4 w-4" /> {sending ? "Sending..." : "Send Message"}
+          </button>
         </div>
-
-        {/* Conversation */}
-        <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.02]">
-          <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-amber-500/15 text-sm font-bold text-amber-300">
-              {current.teacher.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-            </div>
-            <div>
-              <p className="font-semibold text-white">{current.teacher}</p>
-              <p className="text-xs text-slate-500">{current.course}</p>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-5 space-y-3">
-            {current.messages.map((m, i) => (
-              <div key={i} className={`flex ${m.from === "me" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                  m.from === "me"
-                    ? "bg-amber-500 text-slate-900 rounded-br-sm"
-                    : "bg-white/5 text-slate-200 rounded-bl-sm border border-white/5"
-                }`}>
-                  <p>{m.text}</p>
-                  <p className={`mt-1 text-[10px] ${m.from === "me" ? "text-slate-800/70" : "text-slate-500"}`}>{m.at}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t border-white/5 p-3 flex gap-2">
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Type your message..."
-              className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/40 placeholder:text-slate-600"
-            />
-            <button
-              onClick={send}
-              className="grid place-items-center rounded-lg bg-amber-500 px-4 text-slate-900 hover:bg-amber-400"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
-
