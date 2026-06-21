@@ -52,8 +52,8 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// POST /api/auth/register (Admin only use)
-router.post("/register", async (req, res) => {
+// POST /api/auth/register — Admin only
+router.post("/register", require("../middleware/auth").verifyToken, require("../middleware/auth").requireRole("admin"), async (req, res) => {
   const { name, email, password, role } = req.body;
 
   if (!name || !email || !password || !role) {

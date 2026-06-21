@@ -39,7 +39,7 @@ function TeacherLeavePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.from_date || !form.to_date || !form.reason) { toast.error("Sab fields bharo"); return; }
+    if (!form.from_date || !form.to_date || !form.reason) { toast.error("Please fill in all fields."); return; }
     setLoading(true);
     try {
       const res = await fetch(API, {

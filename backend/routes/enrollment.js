@@ -3,17 +3,19 @@ const router  = express.Router();
 const pool    = require("../db");
 const { verifyToken, requireRole } = require("../middleware/auth");
 
-router.get("/", verifyToken, requireRole("admin"), async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT e.*, s.name as student_name, c.name as course_name
-      FROM enrollments e
-      JOIN students s ON e.student_id = s.id
-      JOIN courses c  ON e.course_code = c.code
-      ORDER BY e.created_at DESC
-    `);
+    const { course } = req.query;
+    let query = `SELECT e.*, s.name as student_name, c.name as course_name
+                 FROM enrollments e
+                 JOIN students s ON e.student_id = s.id
+                 JOIN courses c  ON e.course_code = c.code`;
+    const params: any[] = [];
+    if (course) { query += ` WHERE e.course_code = $1`; params.push(course); }
+    query += ` ORDER BY e.created_at DESC`;
+    const result = await pool.query(query, params);
     res.json(result.rows);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { res.status(500).json({ message: (err as any).message }); }
 });
 
 router.post("/", verifyToken, requireRole("admin"), async (req, res) => {

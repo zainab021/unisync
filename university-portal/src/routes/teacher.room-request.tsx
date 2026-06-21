@@ -50,7 +50,7 @@ function RoomRequestPage() {
     try {
       const res = await fetch(API, { method: "POST", headers: authHeaders(), body: JSON.stringify({ room, date, slot, reason }) });
       if (!res.ok) throw new Error();
-      toast.success("Room request submitted", { icon: <BellRing className="h-4 w-4" />, description: "Admin ko notification bhej di gayi" });
+      toast.success("Room request submitted", { icon: <BellRing className="h-4 w-4" />, description: "Admin has been notified and will review your request." });
       setDate(""); setReason("");
       fetchHistory();
     } catch { toast.error("Failed to submit"); }

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Save, Calendar as Cal } from "lucide-react";
-import { teacherCourseOptions, teacherStudents } from "@/data/data";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/teacher/attendance")({
@@ -9,142 +8,196 @@ export const Route = createFileRoute("/teacher/attendance")({
   component: TeacherAttendance,
 });
 
-type Mark = "Present" | "Absent" | "Leave";
+const COURSES_API    = "http://localhost:5000/api/courses";
+const ATTENDANCE_API = "http://localhost:5000/api/attendance";
+const getToken       = () => localStorage.getItem("token") ?? "";
+const authHeaders    = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
+
+type Mark    = "Present" | "Absent" | "Leave";
+type Student = { student_id: string; student_name: string; student_reg: string };
+type Course  = { code: string; name: string };
+
 const MARKS: Mark[] = ["Present", "Absent", "Leave"];
 const MARK_STYLES: Record<Mark, string> = {
   Present: "bg-emerald-500 text-slate-900",
-  Absent: "bg-rose-500 text-white",
-  Leave: "bg-amber-500 text-slate-900",
+  Absent:  "bg-rose-500 text-white",
+  Leave:   "bg-amber-500 text-slate-900",
 };
 
 function TeacherAttendance() {
-  const [course, setCourse] = useState(teacherCourseOptions[0].code);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const students = teacherStudents[course] ?? [];
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [course, setCourse]   = useState("");
+  const [date, setDate]       = useState(new Date().toISOString().slice(0, 10));
+  const [students, setStudents] = useState<Student[]>([]);
+  const [marks, setMarks]     = useState<Record<string, Mark>>({});
+  const [saving, setSaving]   = useState(false);
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
-  const [marks, setMarks] = useState<Record<string, Mark>>(() => {
-    const m: Record<string, Mark> = {};
-    students.forEach((s) => (m[s.id] = "Present"));
-    return m;
-  });
-
-  // Reset marks when course changes
+  // Load courses
   useEffect(() => {
-    const m: Record<string, Mark> = {};
-    teacherStudents[course].forEach((s) => (m[s.id] = "Present"));
-    setMarks(m);
-  }, [course]);
+    fetch(COURSES_API, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d) && d.length) {
+          setCourses(d);
+          setCourse(d[0].code);
+        }
+      }).catch(() => {});
+  }, []);
+
+  // Load enrolled students when course changes
+  useEffect(() => {
+    if (!course) return;
+    setLoadingStudents(true);
+    fetch(`${ATTENDANCE_API}/${course}?date=${date}`, { headers: authHeaders() })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length) {
+          setStudents(data);
+          const m: Record<string, Mark> = {};
+          data.forEach((s: any) => { m[s.student_id] = (s.status as Mark) || "Present"; });
+          setMarks(m);
+        } else {
+          // No attendance yet — fetch student list from enrollment
+          return fetch(`http://localhost:5000/api/enrollment?course=${course}`, { headers: authHeaders() })
+            .then(r => r.json())
+            .then(enrolled => {
+              if (Array.isArray(enrolled)) {
+                const list = enrolled.filter((e: any) => e.course_code === course).map((e: any) => ({
+                  student_id: e.student_id,
+                  student_name: e.student_name,
+                  student_reg: e.student_id,
+                }));
+                setStudents(list);
+                const m: Record<string, Mark> = {};
+                list.forEach((s: any) => { m[s.student_id] = "Present"; });
+                setMarks(m);
+              }
+            });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingStudents(false));
+  }, [course, date]);
 
   const counts = useMemo(() => {
     const c = { Present: 0, Absent: 0, Leave: 0 };
-    Object.values(marks).forEach((v) => (c[v] += 1));
+    Object.values(marks).forEach(v => c[v]++);
     return c;
   }, [marks]);
 
-  const save = () => {
-    toast.success(`Attendance saved for ${course} · ${date}`, {
-      description: `${counts.Present} present, ${counts.Absent} absent, ${counts.Leave} on leave`,
-    });
-  };
+  async function save() {
+    if (students.length === 0) { toast.error("No students found for this course."); return; }
+    setSaving(true);
+    try {
+      const records = students.map(s => ({ student_id: s.student_id, status: marks[s.student_id] || "Present" }));
+      const res = await fetch(ATTENDANCE_API, {
+        method: "POST", headers: authHeaders(),
+        body: JSON.stringify({ records, course_code: course, date })
+      });
+      if (!res.ok) throw new Error();
+      toast.success(`Attendance saved for ${course} · ${date}`, {
+        description: `${counts.Present} present, ${counts.Absent} absent, ${counts.Leave} on leave`,
+      });
+    } catch { toast.error("Failed to save attendance."); }
+    setSaving(false);
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white">Mark Attendance</h1>
-        <p className="mt-1 text-sm text-slate-400">Select a course and toggle each student.</p>
+        <p className="mt-1 text-sm text-slate-400">Select course and date, then mark each student.</p>
       </div>
 
       {/* Controls */}
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Course</label>
-          <select
-            value={course}
-            onChange={(e) => setCourse(e.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/40"
-          >
-            {teacherCourseOptions.map((c) => (
-              <option key={c.code} value={c.code} className="bg-slate-900">{c.label}</option>
-            ))}
+          <select value={course} onChange={e => setCourse(e.target.value)}
+            className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/40">
+            {courses.length === 0
+              ? <option>No courses found</option>
+              : courses.map(c => <option key={c.code} value={c.code} className="bg-slate-900">{c.code} — {c.name}</option>)
+            }
           </select>
         </div>
         <div>
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">Date</label>
           <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/40">
             <Cal className="h-4 w-4 text-slate-500" />
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none [color-scheme:dark]"
-            />
+            <input type="date" value={date} onChange={e => setDate(e.target.value)}
+              className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none [color-scheme:dark]" />
           </div>
         </div>
         <div className="flex items-end">
-          <button
-            onClick={save}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 py-2.5 text-sm font-bold text-slate-900 hover:from-amber-300 hover:to-amber-400 shadow-lg shadow-amber-500/20"
-          >
-            <Save className="h-4 w-4" /> Save Attendance
+          <button onClick={save} disabled={saving || students.length === 0}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 py-2.5 text-sm font-bold text-slate-900 hover:from-amber-300 disabled:opacity-50 shadow-lg">
+            <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save Attendance"}
           </button>
         </div>
       </div>
 
       {/* Counters */}
       <div className="grid gap-3 sm:grid-cols-3">
-        {(["Present", "Absent", "Leave"] as const).map((m) => (
+        {(["Present", "Absent", "Leave"] as Mark[]).map(m => (
           <div key={m} className="rounded-xl border border-white/10 bg-white/[0.03] p-4 flex items-center justify-between">
             <p className="text-xs uppercase tracking-wider text-slate-400">{m}</p>
-            <p className={`text-2xl font-bold tabular-nums ${
-              m === "Present" ? "text-emerald-400" : m === "Absent" ? "text-rose-400" : "text-amber-400"
-            }`}>{counts[m]}</p>
+            <p className={`text-2xl font-bold tabular-nums ${m === "Present" ? "text-emerald-400" : m === "Absent" ? "text-rose-400" : "text-amber-400"}`}>
+              {counts[m]}
+            </p>
           </div>
         ))}
       </div>
 
       {/* Student table */}
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
-        <table className="w-full text-sm">
-          <thead className="bg-white/[0.03] text-left text-xs uppercase tracking-wider text-slate-400">
-            <tr>
-              <th className="px-6 py-3 w-12">#</th>
-              <th className="px-6 py-3">Student</th>
-              <th className="px-6 py-3">Reg #</th>
-              <th className="px-6 py-3 text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {students.map((s, i) => (
-              <tr key={s.id} className="hover:bg-white/[0.02]">
-                <td className="px-6 py-3 text-slate-500 tabular-nums">{i + 1}</td>
-                <td className="px-6 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-8 w-8 place-items-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-300">
-                      {s.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-                    </div>
-                    <span className="font-medium text-white">{s.name}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-3 font-mono text-xs text-slate-400">{s.reg}</td>
-                <td className="px-6 py-3">
-                  <div className="flex justify-end gap-1 rounded-lg border border-white/10 bg-white/5 p-1 w-fit ml-auto">
-                    {MARKS.map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => setMarks({ ...marks, [s.id]: m })}
-                        className={`rounded-md px-3 py-1 text-xs font-semibold transition ${
-                          marks[s.id] === m ? MARK_STYLES[m] : "text-slate-400 hover:text-white"
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </td>
+        {loadingStudents ? (
+          <p className="py-8 text-center text-sm text-slate-500">Loading students...</p>
+        ) : students.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-slate-400">No students enrolled in this course yet.</p>
+            <p className="mt-1 text-xs text-slate-600">Go to Enrollment page to enroll students first.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-white/[0.03] text-left text-xs uppercase tracking-wider text-slate-400">
+              <tr>
+                <th className="px-6 py-3 w-12">#</th>
+                <th className="px-6 py-3">Student</th>
+                <th className="px-6 py-3">ID</th>
+                <th className="px-6 py-3 text-right">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {students.map((s, i) => (
+                <tr key={s.student_id} className="hover:bg-white/[0.02]">
+                  <td className="px-6 py-3 text-slate-500 tabular-nums">{i + 1}</td>
+                  <td className="px-6 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-8 w-8 place-items-center rounded-full bg-amber-500/15 text-xs font-bold text-amber-300">
+                        {s.student_name.split(" ").map(n => n[0]).slice(0, 2).join("")}
+                      </div>
+                      <span className="font-medium text-white">{s.student_name}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{s.student_reg}</td>
+                  <td className="px-6 py-3">
+                    <div className="flex justify-end gap-1 rounded-lg border border-white/10 bg-white/5 p-1 w-fit ml-auto">
+                      {MARKS.map(m => (
+                        <button key={m}
+                          onClick={() => setMarks({ ...marks, [s.student_id]: m })}
+                          className={`rounded-md px-3 py-1 text-xs font-semibold transition ${marks[s.student_id] === m ? MARK_STYLES[m] : "text-slate-400 hover:text-white"}`}>
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

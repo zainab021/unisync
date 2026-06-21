@@ -9,7 +9,7 @@ router.post("/verify-pin", verifyToken, requireRole("admin"), (req, res) => {
   if (String(pin) === String(process.env.BACKUP_PIN)) {
     res.json({ success: true });
   } else {
-    res.status(403).json({ success: false, message: "Galat PIN hai" });
+    res.status(403).json({ success: false, message: "Incorrect PIN. Please try again." });
   }
 });
 

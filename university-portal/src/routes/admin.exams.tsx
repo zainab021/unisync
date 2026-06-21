@@ -45,7 +45,7 @@ function AdminExamsPage() {
   function openEdit(e: Exam) { setEditing(e); setForm({ subject: e.subject, course_code: e.course_code||"", date: e.date?.slice(0,10)||"", time: e.time, venue: e.venue, duration: e.duration, invigilator: e.invigilator||"", type: e.type }); setModalOpen(true); }
 
   async function handleDelete(id: number) {
-    if (!confirm("Delete this exam? Backup mein save ho jayega.")) return;
+    if (!confirm("Delete this exam? It will be saved to backup.")) return;
     try {
       await fetch(`${API}/${id}`, { method: "DELETE", headers: authHeaders() });
       toast.success("Exam deleted");

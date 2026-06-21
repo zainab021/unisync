@@ -71,7 +71,7 @@ function AdminRoomApprovalsPage() {
           </div>
         </div>
       )}
-      {pending.length === 0 && <p className="mb-6 text-sm text-slate-500">Koi pending request nahi.</p>}
+      {pending.length === 0 && <p className="mb-6 text-sm text-slate-500">No pending requests.</p>}
       <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Resolved ({resolved.length})</p>
       <div className="overflow-hidden rounded-xl bg-slate-900/50">
         <table className="w-full text-sm">

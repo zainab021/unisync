@@ -42,11 +42,11 @@ function AdminAuditLogsPage() {
         setUnlocked(true);
         toast.success("Access granted");
       } else {
-        setPinError("Galat PIN hai — dobara try karo");
+        setPinError("Incorrect PIN — please try again.");
         setPin("");
       }
     } catch {
-      setPinError("Server se connect nahi ho saka");
+      setPinError("Could not connect to server. Please try again.");
     }
     setPinLoading(false);
   }
@@ -60,21 +60,21 @@ function AdminAuditLogsPage() {
   }
 
   async function restoreBackup(id: number, tableName: string) {
-    if (!confirm(`"${tableName}" record wapas restore karna chahte hain?`)) return;
+    if (!confirm(`Restore this "${tableName}" record back to the database?`)) return;
     try {
       const res  = await fetch(`${API}/${id}/restore`, { method: "POST", headers: authHeaders() });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      toast.success(`Record successfully restore ho gaya!`);
+      toast.success(`Record restored successfully!`);
       fetchBackups();
     } catch (err: any) { toast.error(err.message ?? "Restore failed"); }
   }
 
   async function removeBackup(id: number) {
-    if (!confirm("Yeh backup permanently delete ho jayega — sure hain?")) return;
+    if (!confirm("This backup will be permanently deleted and cannot be recovered. Are you sure?")) return;
     try {
       await fetch(`${API}/${id}`, { method: "DELETE", headers: authHeaders() });
-      toast.success("Backup permanently delete ho gaya");
+      toast.success("Backup entry permanently deleted.");
       fetchBackups();
     } catch { toast.error("Failed to remove"); }
   }
@@ -90,8 +90,8 @@ function AdminAuditLogsPage() {
             </div>
             <h1 className="text-2xl font-bold text-white">Backup Access</h1>
             <p className="mt-2 text-sm text-slate-400">
-              Yeh page sirf authorized admin access kar sakta hai.<br />
-              Apna secret PIN daalo.
+              This page is restricted to authorized administrators only.<br />
+              Enter your secret PIN to continue.
             </p>
           </div>
 
@@ -122,7 +122,7 @@ function AdminAuditLogsPage() {
           </form>
 
           <p className="mt-4 text-center text-xs text-slate-600">
-            3 baar galat PIN → access band ho jata hai
+            After 5 incorrect attempts, access will be locked for 15 minutes.
           </p>
         </div>
       </div>
@@ -141,7 +141,7 @@ function AdminAuditLogsPage() {
             <ShieldCheck className="h-5 w-5 text-emerald-400" />
             <h1 className="text-2xl font-bold text-white">Deleted Records Backup</h1>
           </div>
-          <p className="mt-1 text-sm text-slate-400">Har deleted record yahan safe hai — restore kar sakte hain.</p>
+          <p className="mt-1 text-sm text-slate-400">All deleted records are safely stored here — you can restore them anytime.</p>
         </div>
         <button onClick={() => { setUnlocked(false); setPin(""); }}
           className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400 hover:text-white transition">
@@ -181,7 +181,7 @@ function AdminAuditLogsPage() {
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="py-8 text-center text-sm text-slate-500">Koi deleted record nahi mila.</td></tr>
+              <tr><td colSpan={7} className="py-8 text-center text-sm text-slate-500">No deleted records found.</td></tr>
             )}
             {filtered.map((b, i) => {
               const data    = typeof b.record_data === "string" ? JSON.parse(b.record_data) : b.record_data;

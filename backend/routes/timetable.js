@@ -65,35 +65,108 @@ router.get("/teacher/:teacherId", auth, async (req, res) => {
   }
 });
 
-// GET timetable for a student (based on enrolled courses)
+// GET timetable for a student (all entries if no enrollment, else filtered)
 router.get("/student/:studentId", auth, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT t.id, t.day, t.course_code, c.name AS course_name,
-             c.credits, te.name AS teacher_name, r.room_name,
-             s.slot_name, s.start_time, s.end_time
-      FROM timetables t
-      JOIN courses c    ON t.course_code  = c.code
-      JOIN teachers te  ON t.teacher_id   = te.id
-      JOIN rooms r      ON t.room_id      = r.id
-      JOIN slots s      ON t.slot_id      = s.id
-      JOIN enrollments e ON e.course_code = t.course_code
-      WHERE e.student_id = $1 AND e.status = 'Enrolled'
-      ORDER BY c.code, t.day, s.start_time
-    `, [req.params.studentId]);
+    // Try enrolled courses first
+    const enrolled = await pool.query(
+      "SELECT course_code FROM enrollments WHERE student_id=$1 AND status='Enrolled'",
+      [req.params.studentId]
+    );
+
+    let result;
+    if (enrolled.rows.length > 0) {
+      const codes = enrolled.rows.map(r => r.course_code);
+      result = await pool.query(`
+        SELECT t.id, t.day, t.course_code, c.name AS course_name,
+               c.credits, te.name AS teacher_name, r.room_name,
+               s.slot_name, s.start_time, s.end_time
+        FROM timetables t
+        JOIN courses c   ON t.course_code = c.code
+        JOIN teachers te ON t.teacher_id  = te.id
+        JOIN rooms r     ON t.room_id     = r.id
+        JOIN slots s     ON t.slot_id     = s.id
+        WHERE t.course_code = ANY($1)
+        ORDER BY s.start_time, t.day
+      `, [codes]);
+    } else {
+      // Show all timetable entries if no enrollment
+      result = await pool.query(`
+        SELECT t.id, t.day, t.course_code, c.name AS course_name,
+               c.credits, te.name AS teacher_name, r.room_name,
+               s.slot_name, s.start_time, s.end_time
+        FROM timetables t
+        JOIN courses c   ON t.course_code = c.code
+        JOIN teachers te ON t.teacher_id  = te.id
+        JOIN rooms r     ON t.room_id     = r.id
+        JOIN slots s     ON t.slot_id     = s.id
+        ORDER BY s.start_time, t.day
+      `);
+    }
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// POST assign a slot (admin only)
+// GET clash check — check if room/teacher is busy
+router.get("/clashes", auth, async (req, res) => {
+  try {
+    const roomClashes = await pool.query(`
+      SELECT t1.id, t1.day, t1.slot_id, r.room_name,
+             c1.name as course1, c2.name as course2
+      FROM timetables t1
+      JOIN timetables t2 ON t1.room_id=t2.room_id AND t1.day=t2.day
+                        AND t1.slot_id=t2.slot_id AND t1.id < t2.id
+      JOIN rooms r   ON t1.room_id = r.id
+      JOIN courses c1 ON t1.course_code = c1.code
+      JOIN courses c2 ON t2.course_code = c2.code
+    `);
+
+    const teacherClashes = await pool.query(`
+      SELECT t1.id, t1.day, t1.slot_id, te.name as teacher_name,
+             c1.name as course1, c2.name as course2
+      FROM timetables t1
+      JOIN timetables t2 ON t1.teacher_id=t2.teacher_id AND t1.day=t2.day
+                        AND t1.slot_id=t2.slot_id AND t1.id < t2.id
+      JOIN teachers te ON t1.teacher_id = te.id
+      JOIN courses c1  ON t1.course_code = c1.code
+      JOIN courses c2  ON t2.course_code = c2.code
+    `);
+
+    res.json({
+      roomClashes:    roomClashes.rows,
+      teacherClashes: teacherClashes.rows,
+      totalClashes:   roomClashes.rows.length + teacherClashes.rows.length,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST assign a slot (admin only) — with clash detection
 router.post("/", auth, async (req, res) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Forbidden" });
   const { course_code, teacher_id, room_id, day, slot_id } = req.body;
   if (!course_code || !teacher_id || !room_id || !day || !slot_id)
     return res.status(400).json({ message: "All fields required" });
   try {
+    // Room clash check
+    const roomBusy = await pool.query(
+      "SELECT c.name FROM timetables t JOIN courses c ON t.course_code=c.code WHERE t.room_id=$1 AND t.day=$2 AND t.slot_id=$3",
+      [room_id, day, slot_id]
+    );
+    if (roomBusy.rows.length > 0)
+      return res.status(409).json({ message: `Room clash: already booked for "${roomBusy.rows[0].name}" on ${day}`, clash: "room" });
+
+    // Teacher clash check
+    const teacherBusy = await pool.query(
+      "SELECT c.name FROM timetables t JOIN courses c ON t.course_code=c.code WHERE t.teacher_id=$1 AND t.day=$2 AND t.slot_id=$3",
+      [teacher_id, day, slot_id]
+    );
+    if (teacherBusy.rows.length > 0)
+      return res.status(409).json({ message: `Teacher clash: already assigned "${teacherBusy.rows[0].name}" on ${day}`, clash: "teacher" });
+
     const result = await pool.query(
       `INSERT INTO timetables (course_code, teacher_id, room_id, day, slot_id)
        VALUES ($1,$2,$3,$4,$5) RETURNING *`,
@@ -101,7 +174,7 @@ router.post("/", auth, async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    if (err.code === "23505") return res.status(409).json({ message: "Slot already assigned for this course/day" });
+    if (err.code === "23505") return res.status(409).json({ message: "This course is already assigned on this day/slot" });
     res.status(500).json({ message: err.message });
   }
 });

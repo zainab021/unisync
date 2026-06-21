@@ -38,7 +38,7 @@ function AdminDepartmentsPage() {
     try {
       const res = await fetch(`${API}/${id}`, { method: "DELETE", headers: authHeaders() });
       if (!res.ok) throw new Error();
-      toast.success("Department deleted — backup mein save ho gaya");
+      toast.success("Department deleted — saved to backup.");
       fetchDepts();
     } catch { toast.error("Failed to delete"); }
   }

@@ -103,7 +103,7 @@ function Dashboard() {
             </Link>
           </div>
           {courses.length === 0 ? (
-            <p className="text-sm text-slate-500">No courses found. Admin se courses add karwayein.</p>
+            <p className="text-sm text-slate-500">No courses available yet. Contact admin to add courses.</p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {courses.map((c: any) => (
