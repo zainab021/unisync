@@ -111,16 +111,16 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin">
         <p
           className={cn(
-            "mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-500",
+            "mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-500",
             collapsed && "opacity-0",
           )}
         >
           {portalLabel}
         </p>
-        <ul className="space-y-1">
+        <ul className="space-y-0.5">
           {links.map((l) => {
             const active = pathname === l.to;
             const Icon = l.icon;
@@ -129,15 +129,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <Link
                   to={l.to}
                   className={cn(
-                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
                     active
                       ? "bg-gradient-to-r from-amber-500/15 to-transparent text-amber-300 shadow-[inset_2px_0_0_0_#F59E0B]"
                       : "text-slate-400 hover:bg-white/5 hover:text-white",
                   )}
                   title={collapsed ? l.label : undefined}
                 >
-                  <Icon className={cn("h-4.5 w-4.5 shrink-0", active && "text-amber-400")} />
-                  {!collapsed && <span className="truncate">{l.label}</span>}
+                  <Icon className={cn("h-4 w-4 shrink-0", active && "text-amber-400")} />
+                  {!collapsed && <span className="truncate text-[13px]">{l.label}</span>}
                 </Link>
               </li>
             );
