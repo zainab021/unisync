@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "@/components/Modal";
 import StatusBadge from "@/components/StatusBadge";
@@ -10,12 +10,14 @@ export const Route = createFileRoute("/admin/enrollment")({ component: AdminEnro
 const API          = "http://localhost:5000/api/enrollment";
 const STUDENTS_API = "http://localhost:5000/api/students";
 const COURSES_API  = "http://localhost:5000/api/courses";
+const DROP_API     = "http://localhost:5000/api/drop-requests";
 const getToken     = () => localStorage.getItem("token") ?? "";
 const authHeaders  = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 
 type Enrollment = { id: number; student_id: string; student_name: string; course_code: string; course_name: string; semester: string; status: string };
 type Student    = { id: string; name: string };
 type Course     = { code: string; name: string };
+type DropReq    = { id: number; student_name: string; student_id: string; course_code: string; course_name: string; reason: string; status: string; requested_at: string };
 
 const toneMap: Record<string, any> = { Enrolled: "success", Dropped: "danger", Completed: "info" };
 
@@ -23,13 +25,16 @@ function AdminEnrollmentPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [students, setStudents]       = useState<Student[]>([]);
   const [courses, setCourses]         = useState<Course[]>([]);
+  const [dropReqs, setDropReqs]       = useState<DropReq[]>([]);
   const [modalOpen, setModalOpen]     = useState(false);
   const [form, setForm]               = useState({ student_id: "", course_code: "", semester: `Spring ${new Date().getFullYear()}` });
   const [loading, setLoading]         = useState(false);
   const [filter, setFilter]           = useState("All");
+  const [tab, setTab]                 = useState<"enrollments" | "drops">("enrollments");
 
   useEffect(() => {
     fetchEnrollments();
+    fetchDropReqs();
     fetch(STUDENTS_API, { headers: authHeaders() }).then(r => r.json()).then(d => setStudents(Array.isArray(d) ? d : [])).catch(() => {});
     fetch(COURSES_API,  { headers: authHeaders() }).then(r => r.json()).then(d => setCourses(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
@@ -40,6 +45,14 @@ function AdminEnrollmentPage() {
       const data = await res.json();
       setEnrollments(Array.isArray(data) ? data : []);
     } catch { toast.error("Failed to load enrollments"); }
+  }
+
+  async function fetchDropReqs() {
+    try {
+      const res  = await fetch(DROP_API, { headers: authHeaders() });
+      const data = await res.json();
+      setDropReqs(Array.isArray(data) ? data : []);
+    } catch {}
   }
 
   async function handleEnroll() {
@@ -73,6 +86,17 @@ function AdminEnrollmentPage() {
     } catch { toast.error("Failed to remove."); }
   }
 
+  async function handleDrop(id: number, action: "approve" | "reject") {
+    try {
+      await fetch(`${DROP_API}/${id}/${action}`, { method: "PATCH", headers: authHeaders() });
+      toast.success(action === "approve" ? "Drop approved — student unenrolled." : "Drop request rejected.");
+      fetchDropReqs();
+      fetchEnrollments();
+    } catch { toast.error("Failed."); }
+  }
+
+  const pendingDrops = dropReqs.filter(d => d.status === "Pending");
+
   const filtered = filter === "All" ? enrollments : enrollments.filter(e => e.status === filter);
 
   return (
@@ -80,7 +104,7 @@ function AdminEnrollmentPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Enrollment Management</h1>
-          <p className="mt-1 text-xs text-slate-400">Enroll students in courses to enable timetable, attendance and grades.</p>
+          <p className="mt-1 text-xs text-slate-400">Enroll students and manage course drop requests.</p>
         </div>
         <button onClick={() => { setForm({ student_id: students[0]?.id ?? "", course_code: courses[0]?.code ?? "", semester: `Spring ${new Date().getFullYear()}` }); setModalOpen(true); }}
           className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-amber-400 transition">
@@ -88,6 +112,70 @@ function AdminEnrollmentPage() {
         </button>
       </div>
 
+      {/* Pending drops alert */}
+      {pendingDrops.length > 0 && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
+          <p className="text-sm text-amber-300 font-semibold">{pendingDrops.length} pending drop request{pendingDrops.length > 1 ? "s" : ""} awaiting your approval</p>
+          <button onClick={() => setTab("drops")} className="ml-auto text-xs text-amber-400 underline">Review Now</button>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="mb-5 flex gap-1 border-b border-white/10">
+        <button onClick={() => setTab("enrollments")}
+          className={`px-4 py-2.5 text-sm font-medium transition ${tab === "enrollments" ? "border-b-2 border-amber-500 text-amber-300" : "text-slate-400 hover:text-white"}`}>
+          Enrollments ({enrollments.length})
+        </button>
+        <button onClick={() => setTab("drops")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition ${tab === "drops" ? "border-b-2 border-amber-500 text-amber-300" : "text-slate-400 hover:text-white"}`}>
+          Drop Requests
+          {pendingDrops.length > 0 && (
+            <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-slate-900">{pendingDrops.length}</span>
+          )}
+        </button>
+      </div>
+
+      {/* DROP REQUESTS TAB */}
+      {tab === "drops" && (
+        <div className="space-y-4">
+          {dropReqs.length === 0 ? (
+            <p className="py-8 text-center text-sm text-slate-500">No drop requests yet.</p>
+          ) : dropReqs.map(d => (
+            <div key={d.id} className={`rounded-2xl border p-5 ${d.status === "Pending" ? "border-amber-500/20 bg-amber-500/5" : "border-white/10 bg-white/[0.02]"}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-semibold text-white">{d.student_name} <span className="text-xs text-slate-500">({d.student_id})</span></p>
+                  <p className="text-sm text-slate-400 mt-0.5">Wants to drop: <span className="text-white font-medium">{d.course_name}</span> ({d.course_code})</p>
+                  {d.reason && <p className="text-xs text-slate-500 mt-1">Reason: {d.reason}</p>}
+                  <p className="text-xs text-slate-600 mt-1">{new Date(d.requested_at).toLocaleString()}</p>
+                </div>
+                <div className="shrink-0">
+                  {d.status === "Pending" ? (
+                    <div className="flex gap-2">
+                      <button onClick={() => handleDrop(d.id, "approve")}
+                        className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition">
+                        <CheckCircle className="h-3.5 w-3.5" /> Approve
+                      </button>
+                      <button onClick={() => handleDrop(d.id, "reject")}
+                        className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition">
+                        <XCircle className="h-3.5 w-3.5" /> Reject
+                      </button>
+                    </div>
+                  ) : (
+                    <span className={`rounded-full border px-3 py-1 text-xs font-bold ${d.status === "Approved" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-rose-500/30 bg-rose-500/10 text-rose-300"}`}>
+                      {d.status}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ENROLLMENTS TAB */}
+      {tab === "enrollments" && <>
       {/* Stats */}
       <div className="mb-6 grid grid-cols-3 gap-4">
         {[
@@ -181,6 +269,7 @@ function AdminEnrollmentPage() {
           </div>
         </div>
       </Modal>
+      </>}
     </div>
   );
 }
