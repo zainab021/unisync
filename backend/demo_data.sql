@@ -15,11 +15,20 @@ INSERT INTO roomtypes (type_name) VALUES ('Classroom'), ('Lab'), ('Hall')
 ON CONFLICT DO NOTHING;
 
 -- Rooms
-INSERT INTO rooms (room_name, room_type_id, capacity) VALUES
-('CS-201', 1, 40), ('CS-305', 1, 35), ('CS-410', 1, 40),
-('Lab-1',  2, 30), ('Lab-3',  2, 30),
-('H-101',  3, 120), ('M-105', 1, 45)
-ON CONFLICT (room_name) DO NOTHING;
+INSERT INTO rooms (room_name, room_type_id, capacity)
+SELECT 'CS-201', id, 40  FROM roomtypes WHERE type_name='Classroom' ON CONFLICT (room_name) DO NOTHING;
+INSERT INTO rooms (room_name, room_type_id, capacity)
+SELECT 'CS-305', id, 35  FROM roomtypes WHERE type_name='Classroom' ON CONFLICT (room_name) DO NOTHING;
+INSERT INTO rooms (room_name, room_type_id, capacity)
+SELECT 'CS-410', id, 40  FROM roomtypes WHERE type_name='Classroom' ON CONFLICT (room_name) DO NOTHING;
+INSERT INTO rooms (room_name, room_type_id, capacity)
+SELECT 'Lab-1',  id, 30  FROM roomtypes WHERE type_name='Lab'       ON CONFLICT (room_name) DO NOTHING;
+INSERT INTO rooms (room_name, room_type_id, capacity)
+SELECT 'Lab-3',  id, 30  FROM roomtypes WHERE type_name='Lab'       ON CONFLICT (room_name) DO NOTHING;
+INSERT INTO rooms (room_name, room_type_id, capacity)
+SELECT 'H-101',  id, 120 FROM roomtypes WHERE type_name='Hall'      ON CONFLICT (room_name) DO NOTHING;
+INSERT INTO rooms (room_name, room_type_id, capacity)
+SELECT 'M-105',  id, 45  FROM roomtypes WHERE type_name='Classroom' ON CONFLICT (room_name) DO NOTHING;
 
 -- Time Slots
 INSERT INTO slots (slot_name, start_time, end_time) VALUES
