@@ -271,17 +271,12 @@ function AdminTimetablePage() {
           <h1 className="text-2xl font-bold text-white">Timetable Management</h1>
           <p className="mt-1 text-xs text-slate-400">Select a room to view and manage its timetable.</p>
         </div>
-        {clashes.totalClashes > 0 ? (
+        {clashes.totalClashes > 0 && (
           <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2">
             <AlertTriangle className="h-4 w-4 text-rose-400" />
             <span className="text-xs font-semibold text-rose-300">{clashes.totalClashes} Conflict{clashes.totalClashes > 1 ? "s" : ""} Detected</span>
           </div>
-        ) : entries.length > 0 ? (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-            <span className="text-xs font-semibold text-emerald-300">No Conflicts</span>
-          </div>
-        ) : null}
+        )}
       </div>
 
       {/* Search + Filter */}
