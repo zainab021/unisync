@@ -43,6 +43,7 @@ const studentLinks = [
   { to: "/student/feedback",  label: "Feedback",  icon: Star },
   { to: "/student/messages",  label: "Messages",  icon: MessageSquare },
   { to: "/student/documents", label: "Documents", icon: FolderOpen },
+  { to: "/student/activity",  label: "My Activity", icon: Bell },
 ];
 
 const teacherLinks = [

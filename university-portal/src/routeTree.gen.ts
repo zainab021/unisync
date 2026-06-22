@@ -36,6 +36,7 @@ import { Route as StudentDocumentsRouteImport } from './routes/student.documents
 import { Route as StudentDashboardRouteImport } from './routes/student.dashboard'
 import { Route as StudentCoursesRouteImport } from './routes/student.courses'
 import { Route as StudentAttendanceRouteImport } from './routes/student.attendance'
+import { Route as StudentActivityRouteImport } from './routes/student.activity'
 import { Route as AdminTimetableRouteImport } from './routes/admin.timetable'
 import { Route as AdminTeachersRouteImport } from './routes/admin.teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin.students'
@@ -189,6 +190,11 @@ const StudentAttendanceRoute = StudentAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => StudentRoute,
 } as any)
+const StudentActivityRoute = StudentActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => StudentRoute,
+} as any)
 const AdminTimetableRoute = AdminTimetableRouteImport.update({
   id: '/timetable',
   path: '/timetable',
@@ -297,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin/timetable': typeof AdminTimetableRoute
+  '/student/activity': typeof StudentActivityRoute
   '/student/attendance': typeof StudentAttendanceRoute
   '/student/courses': typeof StudentCoursesRoute
   '/student/dashboard': typeof StudentDashboardRoute
@@ -343,6 +350,7 @@ export interface FileRoutesByTo {
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin/timetable': typeof AdminTimetableRoute
+  '/student/activity': typeof StudentActivityRoute
   '/student/attendance': typeof StudentAttendanceRoute
   '/student/courses': typeof StudentCoursesRoute
   '/student/dashboard': typeof StudentDashboardRoute
@@ -390,6 +398,7 @@ export interface FileRoutesById {
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
   '/admin/timetable': typeof AdminTimetableRoute
+  '/student/activity': typeof StudentActivityRoute
   '/student/attendance': typeof StudentAttendanceRoute
   '/student/courses': typeof StudentCoursesRoute
   '/student/dashboard': typeof StudentDashboardRoute
@@ -438,6 +447,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/admin/teachers'
     | '/admin/timetable'
+    | '/student/activity'
     | '/student/attendance'
     | '/student/courses'
     | '/student/dashboard'
@@ -484,6 +494,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/admin/teachers'
     | '/admin/timetable'
+    | '/student/activity'
     | '/student/attendance'
     | '/student/courses'
     | '/student/dashboard'
@@ -530,6 +541,7 @@ export interface FileRouteTypes {
     | '/admin/students'
     | '/admin/teachers'
     | '/admin/timetable'
+    | '/student/activity'
     | '/student/attendance'
     | '/student/courses'
     | '/student/dashboard'
@@ -753,6 +765,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentAttendanceRouteImport
       parentRoute: typeof StudentRoute
     }
+    '/student/activity': {
+      id: '/student/activity'
+      path: '/activity'
+      fullPath: '/student/activity'
+      preLoaderRoute: typeof StudentActivityRouteImport
+      parentRoute: typeof StudentRoute
+    }
     '/admin/timetable': {
       id: '/admin/timetable'
       path: '/timetable'
@@ -918,6 +937,7 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface StudentRouteChildren {
+  StudentActivityRoute: typeof StudentActivityRoute
   StudentAttendanceRoute: typeof StudentAttendanceRoute
   StudentCoursesRoute: typeof StudentCoursesRoute
   StudentDashboardRoute: typeof StudentDashboardRoute
@@ -934,6 +954,7 @@ interface StudentRouteChildren {
 }
 
 const StudentRouteChildren: StudentRouteChildren = {
+  StudentActivityRoute: StudentActivityRoute,
   StudentAttendanceRoute: StudentAttendanceRoute,
   StudentCoursesRoute: StudentCoursesRoute,
   StudentDashboardRoute: StudentDashboardRoute,
