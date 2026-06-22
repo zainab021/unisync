@@ -48,6 +48,8 @@ router.put("/:id", verifyToken, requireRole("admin"), async (req, res) => {
 // DELETE department — backup first
 router.delete("/:id", verifyToken, requireRole("admin"), async (req, res) => {
   try {
+    // Remove department reference from courses first
+    await pool.query("UPDATE courses SET department=NULL WHERE department=$1", [req.params.id]);
     await backup("departments", req.params.id, req.user.id);
     await pool.query("DELETE FROM departments WHERE id=$1", [req.params.id]);
     res.json({ message: "Department deleted" });

@@ -19,6 +19,8 @@ const EMPTY: Course = { code: "", name: "", department: "CS", teacher_id: "", cr
 function AdminCoursesPage() {
   const [courses, setCourses]   = useState<Course[]>([]);
   const [search, setSearch]     = useState("");
+  const [deptFilter, setDeptFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]   = useState<Course | null>(null);
@@ -73,19 +75,50 @@ function AdminCoursesPage() {
     setLoading(false);
   }
 
+  const depts = ["All", ...Array.from(new Set(courses.map(c => c.department).filter(Boolean)))];
+  const filtered = courses.filter(c => {
+    const q = search.toLowerCase();
+    const matchSearch = !search || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || c.teacher_name?.toLowerCase().includes(q);
+    const matchDept   = deptFilter === "All" || c.department === deptFilter;
+    const matchStatus = statusFilter === "All" || c.status === statusFilter;
+    return matchSearch && matchDept && matchStatus;
+  });
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Courses</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-white">Courses</h1>
+          <p className="mt-1 text-xs text-slate-400">{filtered.length} of {courses.length} courses</p>
+        </div>
         <button onClick={openAdd} className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-amber-400 transition">
           <Plus className="h-4 w-4" /> Add Course
         </button>
       </div>
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
-        <Search className="h-4 w-4 text-slate-500" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by code or name..."
-          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+
+      {/* Search + Filters */}
+      <div className="mb-4 flex flex-wrap gap-3">
+        <div className="flex flex-1 min-w-48 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+          <Search className="h-4 w-4 text-slate-500" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by code, name or teacher..."
+            className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+        </div>
+        <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500/50">
+          {depts.map(d => <option key={d}>{d}</option>)}
+        </select>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500/50">
+          {["All", "Active", "Inactive"].map(s => <option key={s}>{s}</option>)}
+        </select>
+        {(search || deptFilter !== "All" || statusFilter !== "All") && (
+          <button onClick={() => { setSearch(""); setDeptFilter("All"); setStatusFilter("All"); }}
+            className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400 hover:text-white transition">
+            Clear
+          </button>
+        )}
       </div>
+
       <div className="overflow-hidden rounded-xl bg-slate-900/50">
         <table className="w-full text-sm">
           <thead>
@@ -96,8 +129,8 @@ function AdminCoursesPage() {
             </tr>
           </thead>
           <tbody>
-            {courses.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-sm text-slate-500">No courses found.</td></tr>}
-            {courses.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase())).map(c => (
+            {filtered.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-sm text-slate-500">No courses found.</td></tr>}
+            {filtered.map(c => (
               <tr key={c.code} className="border-t border-white/5 hover:bg-white/[0.03]">
                 <td className="px-4 py-3 font-mono text-amber-300">{c.code}</td>
                 <td className="px-4 py-3 font-medium text-white">{c.name}</td>
