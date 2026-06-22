@@ -78,6 +78,7 @@ app.use("/api/library",       require("./routes/library"));
 app.use("/api/doc-requests",  require("./routes/document-requests"));
 app.use("/api/drop-requests", require("./routes/drop-requests"));
 app.use("/api/notifications", require("./routes/notifications"));
+app.use("/api/audit-logs",   require("./routes/audit-logs"));
 app.use("/api/search",        require("./routes/search"));
 
 // ── Health check ────────────────────────────────────────────────────

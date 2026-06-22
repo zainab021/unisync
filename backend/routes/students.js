@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db");
 const { verifyToken, requireRole } = require("../middleware/auth");
+const logActivity = require("../utils/activity");
 
 const router = express.Router();
 
@@ -54,6 +55,7 @@ router.post("/", verifyToken, requireRole("admin"), async (req, res) => {
       [studentId, userId, name, program, semester, cgpa || 0]
     );
 
+    logActivity({ user_id: req.user.id, user_name: req.user.name, role: req.user.role, action: `Added new student: ${name}`, type: "Student" });
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -69,6 +71,7 @@ router.put("/:id", verifyToken, requireRole("admin"), async (req, res) => {
       "UPDATE students SET name=$1, program=$2, semester=$3, cgpa=$4, status=$5 WHERE id=$6 RETURNING *",
       [name, program, semester, cgpa, status, req.params.id]
     );
+    logActivity({ user_id: req.user.id, user_name: req.user.name, role: req.user.role, action: `Updated student: ${name}`, type: "Student" });
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -81,6 +84,7 @@ router.delete("/:id", verifyToken, requireRole("admin"), async (req, res) => {
     const backup = require("../utils/backup");
     await backup("students", req.params.id, req.user.id);
     await pool.query("DELETE FROM students WHERE id=$1", [req.params.id]);
+    logActivity({ user_id: req.user.id, user_name: req.user.name, role: req.user.role, action: `Deleted student: ${req.params.id}`, type: "Student" });
     res.json({ message: "Student deleted" });
   } catch (err) {
     res.status(500).json({ message: "Server error" });

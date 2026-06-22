@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db");
 const { verifyToken, requireRole } = require("../middleware/auth");
+const logActivity = require("../utils/activity");
 
 const router = express.Router();
 
@@ -27,6 +28,7 @@ router.post("/", verifyToken, requireRole("admin", "teacher"), async (req, res) 
       "INSERT INTO notices (title, body, category, priority, posted_by) VALUES ($1,$2,$3,$4,$5) RETURNING *",
       [title, body, category, priority || "Medium", req.user.id]
     );
+    logActivity({ user_id: req.user.id, user_name: req.user.name, role: req.user.role, action: `Posted notice: "${title}"`, type: "Notice" });
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ message: "Server error" });

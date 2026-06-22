@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("../db");
+const logActivity = require("../utils/activity");
 
 const router = express.Router();
 
@@ -35,6 +36,8 @@ router.post("/login", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+
+    logActivity({ user_id: user.id, user_name: user.name, role: user.role, action: `${user.name} logged in`, type: "Login" });
 
     res.json({
       token,
