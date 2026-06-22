@@ -17,6 +17,8 @@ const EMPTY: Student = { id: "", name: "", email: "", program: "BS Computer Scie
 function AdminStudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch]     = useState("");
+  const [programFilter, setProgramFilter] = useState("All");
+  const [statusFilter, setStatusFilter]   = useState("All");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing]   = useState<Student | null>(null);
   const [form, setForm]         = useState<Student>(EMPTY);
@@ -32,10 +34,13 @@ function AdminStudentsPage() {
     } catch { toast.error("Failed to load students"); }
   }
 
-  const filtered = students.filter(s =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const programs = ["All", ...Array.from(new Set(students.map(s => s.program).filter(Boolean)))];
+  const filtered = students.filter(s => {
+    const q = search.toLowerCase();
+    return (s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q)) &&
+      (programFilter === "All" || s.program === programFilter) &&
+      (statusFilter === "All" || s.status === statusFilter);
+  });
 
   function openAdd() { setEditing(null); setForm(EMPTY); setModalOpen(true); }
   function openEdit(s: Student) { setEditing(s); setForm({ ...s }); setModalOpen(true); }
@@ -74,10 +79,21 @@ function AdminStudentsPage() {
           <Plus className="h-4 w-4" /> Add Student
         </button>
       </div>
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
-        <Search className="h-4 w-4 text-slate-500" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or ID..." className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
-        {search && <button onClick={() => setSearch("")}><X className="h-4 w-4 text-slate-500" /></button>}
+      <div className="mb-4 flex flex-wrap gap-3">
+        <div className="flex flex-1 min-w-48 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+          <Search className="h-4 w-4 text-slate-500" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or ID..."
+            className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+          {search && <button onClick={() => setSearch("")}><X className="h-4 w-4 text-slate-500" /></button>}
+        </div>
+        <select value={programFilter} onChange={e => setProgramFilter(e.target.value)}
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500/50">
+          {programs.map(p => <option key={p}>{p}</option>)}
+        </select>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500/50">
+          {["All","Active","Warning","Suspended"].map(s => <option key={s}>{s}</option>)}
+        </select>
       </div>
       <div className="overflow-hidden rounded-xl bg-slate-900/50">
         <table className="w-full text-sm">

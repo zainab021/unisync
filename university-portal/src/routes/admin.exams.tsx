@@ -24,6 +24,7 @@ function AdminExamsPage() {
   const [form, setForm]         = useState(EMPTY);
   const [loading, setLoading]   = useState(false);
   const [search, setSearch]     = useState("");
+  const [typeFilter, setTypeFilter] = useState("All");
 
   useEffect(() => {
     fetchExams();
@@ -79,10 +80,16 @@ function AdminExamsPage() {
           <Plus className="h-4 w-4" /> Add Exam
         </button>
       </div>
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
-        <Search className="h-4 w-4 text-slate-500" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by subject, course or venue..."
-          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+      <div className="mb-4 flex flex-wrap gap-3">
+        <div className="flex flex-1 min-w-48 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+          <Search className="h-4 w-4 text-slate-500" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by subject, course or venue..."
+            className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+        </div>
+        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500/50">
+          {["All","Mid Term","Final","Quiz","Lab"].map(t => <option key={t}>{t}</option>)}
+        </select>
       </div>
       <div className="overflow-hidden rounded-xl bg-slate-900/50">
         <table className="w-full text-sm">
@@ -94,8 +101,8 @@ function AdminExamsPage() {
             </tr>
           </thead>
           <tbody>
-            {exams.filter(e => !search || e.subject.toLowerCase().includes(search.toLowerCase()) || e.venue?.toLowerCase().includes(search.toLowerCase())).length === 0 && <tr><td colSpan={8} className="py-8 text-center text-sm text-slate-500">No exams found.</td></tr>}
-            {exams.filter(e => !search || e.subject.toLowerCase().includes(search.toLowerCase()) || e.venue?.toLowerCase().includes(search.toLowerCase())).map(e => (
+            {exams.filter(e => (!search || e.subject.toLowerCase().includes(search.toLowerCase()) || e.venue?.toLowerCase().includes(search.toLowerCase())) && (typeFilter === "All" || e.type === typeFilter)).length === 0 && <tr><td colSpan={8} className="py-8 text-center text-sm text-slate-500">No exams found.</td></tr>}
+            {exams.filter(e => (!search || e.subject.toLowerCase().includes(search.toLowerCase()) || e.venue?.toLowerCase().includes(search.toLowerCase())) && (typeFilter === "All" || e.type === typeFilter)).map(e => (
               <tr key={e.id} className="border-t border-white/5 hover:bg-white/[0.03]">
                 <td className="px-4 py-3 font-medium text-white">{e.subject}</td>
                 <td className="px-4 py-3 text-slate-400 text-xs">{e.course_name || e.course_code}</td>

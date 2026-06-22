@@ -179,10 +179,21 @@ function AdminEnrollmentPage() {
 
       {/* ENROLLMENTS TAB */}
       {tab === "enrollments" && <>
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
-        <Search className="h-4 w-4 text-slate-500" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by student or course..."
-          className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+      <div className="mb-4 flex flex-wrap gap-3">
+        <div className="flex flex-1 min-w-48 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 focus-within:border-amber-500/50 transition">
+          <Search className="h-4 w-4 text-slate-500" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by student or course..."
+            className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600" />
+        </div>
+        <select onChange={e => setFilter(e.target.value)} value={filter}
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500/50">
+          {["All","Enrolled","Dropped","Completed"].map(s => <option key={s}>{s}</option>)}
+        </select>
+        <select onChange={e => setSearch(e.target.value === "All" ? "" : e.target.value)}
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-amber-500/50">
+          <option value="All">All Courses</option>
+          {[...new Set(enrollments.map(e => e.course_name))].filter(Boolean).map(c => <option key={c}>{c}</option>)}
+        </select>
       </div>
       {/* Stats */}
       <div className="mb-6 grid grid-cols-3 gap-4">
@@ -198,15 +209,6 @@ function AdminEnrollmentPage() {
         ))}
       </div>
 
-      {/* Filter */}
-      <div className="mb-4 flex gap-1 border-b border-white/10">
-        {["All", "Enrolled", "Dropped", "Completed"].map(t => (
-          <button key={t} onClick={() => setFilter(t)}
-            className={`px-4 py-2.5 text-sm font-medium transition ${filter === t ? "border-b-2 border-amber-500 text-amber-300" : "text-slate-400 hover:text-white"}`}>
-            {t}
-          </button>
-        ))}
-      </div>
 
       <div className="overflow-hidden rounded-xl bg-slate-900/50">
         <table className="w-full text-sm">
