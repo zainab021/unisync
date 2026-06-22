@@ -30,6 +30,8 @@ function AdminTimetablePage() {
   const [selecting, setSelecting] = useState<{ day: string; slot_id: number } | null>(null);
   const [form, setForm]         = useState({ course_code: "", teacher_id: "", room_id: "" });
   const [loading, setLoading]   = useState(false);
+  const [view, setView]         = useState<"assign" | "room">("assign");
+  const [selectedRoom, setSelectedRoom] = useState("");
 
   useEffect(() => {
     fetch(`${API}/slots`).then(r => r.json()).then(setSlots).catch(() => {});
@@ -122,12 +124,20 @@ function AdminTimetablePage() {
     setLoading(false);
   }
 
+  // Room view: get all entries for selected room
+  const roomEntries = selectedRoom
+    ? entries.filter(e => e.room_name === selectedRoom)
+    : [];
+  const roomInfo = rooms.find(r => r.room_name === selectedRoom);
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Timetable Management</h1>
-          <p className="mt-1 text-xs text-slate-400">Click any cell to assign course, teacher and room.</p>
+          <p className="mt-1 text-xs text-slate-400">
+            {view === "assign" ? "Click any cell to assign course, teacher and room." : "Select a room to view its full schedule."}
+          </p>
         </div>
         {clashes.totalClashes > 0 ? (
           <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2">
@@ -141,6 +151,102 @@ function AdminTimetablePage() {
           </div>
         ) : null}
       </div>
+
+      {/* View Tabs */}
+      <div className="mb-5 flex gap-1 border-b border-white/10">
+        <button onClick={() => setView("assign")}
+          className={`px-4 py-2.5 text-sm font-medium transition ${view === "assign" ? "border-b-2 border-amber-500 text-amber-300" : "text-slate-400 hover:text-white"}`}>
+          Assign Timetable
+        </button>
+        <button onClick={() => setView("room")}
+          className={`px-4 py-2.5 text-sm font-medium transition ${view === "room" ? "border-b-2 border-amber-500 text-amber-300" : "text-slate-400 hover:text-white"}`}>
+          Room Schedule
+        </button>
+      </div>
+
+      {/* ── ROOM VIEW ──────────────────────────────────────────── */}
+      {view === "room" && (
+        <div>
+          <div className="mb-4 flex items-center gap-4">
+            <select value={selectedRoom} onChange={e => setSelectedRoom(e.target.value)}
+              className="rounded-lg border border-white/10 bg-slate-900 px-4 py-2.5 text-sm text-white outline-none focus:border-amber-500/50 min-w-48">
+              <option value="">— Select Room —</option>
+              {rooms.map(r => (
+                <option key={r.id} value={r.room_name}>
+                  {r.room_name} ({r.type_name}, Cap: {r.capacity})
+                </option>
+              ))}
+            </select>
+            {roomInfo && (
+              <div className="flex gap-3 text-sm">
+                <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-slate-300">
+                  Type: <span className="text-white font-medium">{roomInfo.type_name}</span>
+                </span>
+                <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-slate-300">
+                  Capacity: <span className="text-amber-400 font-bold">{roomInfo.capacity}</span>
+                </span>
+                <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-slate-300">
+                  Booked: <span className="text-emerald-400 font-bold">{roomEntries.length}</span> slots
+                </span>
+              </div>
+            )}
+          </div>
+
+          {!selectedRoom ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] py-12 text-center">
+              <p className="text-slate-400">Select a room to view its timetable.</p>
+            </div>
+          ) : roomEntries.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] py-12 text-center">
+              <p className="text-slate-400">No classes scheduled in <strong className="text-white">{selectedRoom}</strong> yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02]">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/[0.03]">
+                    <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-slate-400">Time Slot</th>
+                    {DAYS.map(d => (
+                      <th key={d} className="px-3 py-3 text-left text-xs uppercase tracking-wider text-slate-400">{d}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {slots.map(slot => (
+                    <tr key={slot.id} className="border-b border-white/5">
+                      <td className="px-4 py-3">
+                        <p className="text-xs font-semibold text-slate-400">{slot.slot_name}</p>
+                        <p className="text-[10px] text-slate-600">{slot.start_time}–{slot.end_time}</p>
+                      </td>
+                      {DAYS.map(day => {
+                        const entry = roomEntries.find(e => e.day === day && e.slot_id === slot.id);
+                        return (
+                          <td key={day} className="px-2 py-2">
+                            {entry ? (
+                              <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2">
+                                <p className="text-xs font-bold text-amber-300 truncate">{entry.course_name}</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">👤 {entry.teacher_name}</p>
+                                <p className="text-[10px] text-slate-500">{entry.course_code}</p>
+                              </div>
+                            ) : (
+                              <div className="rounded-lg border border-dashed border-white/5 h-14 flex items-center justify-center">
+                                <span className="text-[10px] text-slate-700">Free</span>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── ASSIGN VIEW ────────────────────────────────────────── */}
+      {view === "assign" && <>
 
       {/* Clash Warnings */}
       {clashes.roomClashes.length > 0 && (
@@ -286,6 +392,7 @@ function AdminTimetablePage() {
           </div>
         </div>
       )}
+      </> }
     </div>
   );
 }
