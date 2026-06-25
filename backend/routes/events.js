@@ -7,10 +7,14 @@ const { verifyToken, requireRole } = require("../middleware/auth");
 router.get("/", verifyToken, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT e.*, u.name AS created_by_name
-      FROM calendar_events e
-      LEFT JOIN users u ON e.created_by = u.id
-      ORDER BY e.date ASC
+      SELECT * FROM (
+        SELECT DISTINCT ON (e.title, e.date, e.category)
+               e.*, u.name AS created_by_name
+        FROM calendar_events e
+        LEFT JOIN users u ON e.created_by = u.id
+        ORDER BY e.title, e.date, e.category, e.id
+      ) deduped
+      ORDER BY date ASC
     `);
     res.json(result.rows);
   } catch (err) { res.status(500).json({ message: err.message }); }

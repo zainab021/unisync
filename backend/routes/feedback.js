@@ -25,12 +25,13 @@ router.get("/my", verifyToken, requireRole("student"), async (req, res) => {
     const student = await pool.query("SELECT id FROM students WHERE user_id=$1", [req.user.id]);
     if (!student.rows[0]) return res.json([]);
     const result = await pool.query(`
-      SELECT f.*, c.name AS course_name, t.name AS teacher_name
+      SELECT DISTINCT ON (f.course_code, f.teacher_id)
+             f.*, c.name AS course_name, t.name AS teacher_name
       FROM feedback f
       LEFT JOIN courses c  ON f.course_code = c.code
       LEFT JOIN teachers t ON f.teacher_id  = t.id
       WHERE f.student_id = $1
-      ORDER BY f.created_at DESC
+      ORDER BY f.course_code, f.teacher_id, f.created_at DESC
     `, [student.rows[0].id]);
     res.json(result.rows);
   } catch (err) { res.status(500).json({ message: err.message }); }

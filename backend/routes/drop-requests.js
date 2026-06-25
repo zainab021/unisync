@@ -29,6 +29,9 @@ router.post("/", verifyToken, requireRole("student"), async (req, res) => {
     );
     if (existing.rows[0]) return res.status(409).json({ message: "Drop request already pending for this course." });
 
+    const courseQ = await pool.query("SELECT name FROM courses WHERE code=$1", [course_code]);
+    const stuQ    = await pool.query("SELECT name FROM students WHERE id=$1", [sid]);
+
     const result = await pool.query(
       "INSERT INTO drop_requests (student_id, course_code, reason) VALUES ($1,$2,$3) RETURNING *",
       [sid, course_code, reason || ""]
@@ -51,8 +54,6 @@ router.post("/", verifyToken, requireRole("student"), async (req, res) => {
 
     // Email admin
     const adminQ = await pool.query("SELECT email FROM users WHERE role='admin' LIMIT 1");
-    const courseQ = await pool.query("SELECT name FROM courses WHERE code=$1", [course_code]);
-    const stuQ    = await pool.query("SELECT name FROM students WHERE id=$1", [sid]);
     if (adminQ.rows[0]) {
       email.dropRequestSubmitted({
         studentName: stuQ.rows[0]?.name,

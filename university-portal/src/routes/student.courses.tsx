@@ -33,7 +33,7 @@ function CoursesPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/courses`, { headers: h() })
+    fetch(`${API}/courses/my`, { headers: h() })
       .then(r => r.json()).then(d => setCourses(Array.isArray(d) ? d : [])).catch(() => {});
     fetch(`${API}/drop-requests/my`, { headers: h() })
       .then(r => r.json()).then(d => setDropReqs(Array.isArray(d) ? d : [])).catch(() => {});
@@ -63,10 +63,14 @@ function CoursesPage() {
         body: JSON.stringify({ course_code: dropCourse.code, reason })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) {
+        // Refresh drop requests so badge shows correctly even on duplicate error
+        fetch(`${API}/drop-requests/my`, { headers: h() })
+          .then(r => r.json()).then(d => setDropReqs(Array.isArray(d) ? d : []));
+        throw new Error(data.message);
+      }
       toast.success("Drop request submitted. Awaiting admin approval.");
       setModalOpen(false);
-      // Refresh drop requests
       fetch(`${API}/drop-requests/my`, { headers: h() })
         .then(r => r.json()).then(d => setDropReqs(Array.isArray(d) ? d : []));
     } catch (err: any) { toast.error(err.message ?? "Failed to submit."); }

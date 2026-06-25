@@ -9,13 +9,11 @@ export const Route = createFileRoute("/student/feedback")({
 });
 
 const API         = "http://localhost:5000/api/feedback";
-const TEACHERS_API = "http://localhost:5000/api/teachers";
-const COURSES_API  = "http://localhost:5000/api/courses";
+const COURSES_API  = "http://localhost:5000/api/courses/my";
 const getToken    = () => localStorage.getItem("token") ?? "";
 const h = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 
-type Teacher  = { id: string; name: string };
-type Course   = { code: string; name: string };
+type Course   = { code: string; name: string; teacher_id: string; teacher_name?: string };
 type Feedback = { id: number; teacher_name: string; course_name: string; rating: number; comment: string; created_at: string };
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -35,18 +33,26 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
 }
 
 function FeedbackPage() {
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [courses, setCourses]   = useState<Course[]>([]);
+  const [courses, setCourses]       = useState<Course[]>([]);
   const [myFeedback, setMyFeedback] = useState<Feedback[]>([]);
-  const [form, setForm]         = useState({ teacher_id: "", course_code: "", rating: 0, comment: "", anonymous: true });
-  const [tab, setTab]           = useState<"submit" | "history">("submit");
+  const [form, setForm]             = useState({ teacher_id: "", course_code: "", rating: 0, comment: "", anonymous: true });
+  const [tab, setTab]               = useState<"submit" | "history">("submit");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch(TEACHERS_API, { headers: h() }).then(r => r.json()).then(d => setTeachers(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch(COURSES_API,  { headers: h() }).then(r => r.json()).then(d => setCourses(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch(`${API}/my`,  { headers: h() }).then(r => r.json()).then(d => setMyFeedback(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch(COURSES_API, { headers: h() }).then(r => r.json()).then(d => setCourses(Array.isArray(d) ? d : [])).catch(() => {});
+    fetch(`${API}/my`, { headers: h() }).then(r => r.json()).then(d => setMyFeedback(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
+
+  // Unique teachers from enrolled courses only
+  const teachers = Array.from(
+    new Map(courses.filter(c => c.teacher_id).map(c => [c.teacher_id, { id: c.teacher_id, name: c.teacher_name ?? c.teacher_id }])).values()
+  );
+
+  function handleCourseChange(code: string) {
+    const course = courses.find(c => c.code === code);
+    setForm(f => ({ ...f, course_code: code, teacher_id: course?.teacher_id ?? f.teacher_id }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,19 +94,19 @@ function FeedbackPage() {
         <form onSubmit={handleSubmit} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-widest text-slate-400">Course</label>
+              <select value={form.course_code} onChange={e => handleCourseChange(e.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/40">
+                <option value="">— Select Course —</option>
+                {courses.map(c => <option key={c.code} value={c.code} className="bg-slate-900">{c.code} — {c.name}</option>)}
+              </select>
+            </div>
+            <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-widest text-slate-400">Teacher</label>
               <select value={form.teacher_id} onChange={e => setForm(f => ({ ...f, teacher_id: e.target.value }))}
                 className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/40">
                 <option value="">— Select Teacher —</option>
                 {teachers.map(t => <option key={t.id} value={t.id} className="bg-slate-900">{t.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-widest text-slate-400">Course</label>
-              <select value={form.course_code} onChange={e => setForm(f => ({ ...f, course_code: e.target.value }))}
-                className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/40">
-                <option value="">— Select Course —</option>
-                {courses.map(c => <option key={c.code} value={c.code} className="bg-slate-900">{c.code} — {c.name}</option>)}
               </select>
             </div>
           </div>

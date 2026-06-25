@@ -61,13 +61,14 @@ function DocumentsPage() {
         </button>
       </div>
 
-      {/* Available documents info */}
+      {/* Available documents — click to request */}
       <div className="grid gap-3 sm:grid-cols-3">
-        {DOC_TYPES.slice(0, 3).map(t => (
-          <div key={t} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+        {DOC_TYPES.map(t => (
+          <button key={t} onClick={() => { setForm(f => ({ ...f, type: t })); setModalOpen(true); }}
+            className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 hover:border-amber-500/40 hover:bg-amber-500/5 transition text-left w-full">
             <FileText className="h-5 w-5 text-amber-400 shrink-0" />
             <span className="text-sm text-slate-300">{t}</span>
-          </div>
+          </button>
         ))}
       </div>
 
