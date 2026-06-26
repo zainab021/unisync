@@ -107,13 +107,13 @@ function Dashboard() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {courses.map((c: any) => (
-                <div key={c.code} className="rounded-xl border border-white/5 bg-white/[0.03] p-4 hover:border-amber-500/30 transition">
+                <Link key={c.code} to="/student/courses" className="rounded-xl border border-white/5 bg-white/[0.03] p-4 hover:border-amber-500/30 hover:bg-amber-500/5 transition cursor-pointer">
                   <div className="flex items-center gap-2 text-xs text-slate-500">
                     <BookOpen className="h-3 w-3" /> {c.code}
                   </div>
                   <p className="mt-1 font-semibold text-white truncate">{c.name}</p>
                   <p className="text-xs text-slate-400">{c.teacher_name ?? "TBA"}</p>
-                </div>
+                </Link>
               ))}
             </div>
           )}
