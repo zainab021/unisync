@@ -112,7 +112,7 @@ export function Navbar() {
       darkMode ? "border-white/5 bg-slate-950/80" : "border-slate-200 bg-white/90"
     )}>
       {/* Search */}
-      <div className="flex-1 max-w-md relative" ref={searchRef}>
+      <div className="flex-1 max-w-md relative hidden sm:block" ref={searchRef}>
         <div className={cn("flex items-center gap-2 rounded-lg border px-3 focus-within:ring-1 ring-amber-500/50 transition",
           darkMode ? "border-white/10 bg-white/5" : "border-slate-200 bg-slate-50")}>
           <Search className="h-4 w-4 text-slate-500 shrink-0" />
@@ -200,7 +200,7 @@ export function Navbar() {
         {/* User */}
         <div className={cn("flex items-center gap-3 border-l pl-3", darkMode ? "border-white/5" : "border-slate-200")}>
           <div className="hidden text-right sm:block">
-            <p className={cn("text-sm font-semibold leading-tight", darkMode ? "text-white" : "text-slate-800")}>{name}</p>
+            <p className={cn("text-sm font-semibold leading-tight hidden sm:block", darkMode ? "text-white" : "text-slate-800")}>{name}</p>
             <span className="rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-amber-500 uppercase">
               {roleLabel}
             </span>
