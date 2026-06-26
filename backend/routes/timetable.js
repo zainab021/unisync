@@ -46,6 +46,35 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+// GET timetable for logged-in student (uses JWT)
+router.get("/my-student", auth, async (req, res) => {
+  try {
+    const studentQ = await pool.query("SELECT id FROM students WHERE user_id=$1", [req.user.id]);
+    if (!studentQ.rows[0]) return res.json([]);
+    const sid = studentQ.rows[0].id;
+
+    const enrolled = await pool.query(
+      "SELECT course_code FROM enrollments WHERE student_id=$1 AND status='Enrolled'", [sid]
+    );
+    if (!enrolled.rows.length) return res.json([]);
+
+    const codes = enrolled.rows.map(r => r.course_code);
+    const result = await pool.query(`
+      SELECT t.id, t.day, t.slot_id, t.course_code, c.name AS course_name,
+             c.credits, te.name AS teacher_name, r.room_name,
+             s.slot_name, s.start_time, s.end_time
+      FROM timetables t
+      JOIN courses c   ON t.course_code = c.code
+      JOIN teachers te ON t.teacher_id  = te.id
+      JOIN rooms r     ON t.room_id     = r.id
+      JOIN slots s     ON t.slot_id     = s.id
+      WHERE t.course_code = ANY($1)
+      ORDER BY s.start_time, t.day
+    `, [codes]);
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // GET timetable for logged-in teacher (uses JWT)
 router.get("/my", auth, async (req, res) => {
   try {

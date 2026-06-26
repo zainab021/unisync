@@ -8,7 +8,6 @@ export const Route = createFileRoute("/student/timetable")({
 
 const API = "https://unisync-4ovf.onrender.com/api/timetable";
 const getToken    = () => localStorage.getItem("token") ?? "";
-const getStudentId = () => localStorage.getItem("profileId") ?? "";
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 type Entry = {
@@ -25,10 +24,9 @@ function TimetablePage() {
   const [view, setView]       = useState<"grid" | "list">("grid");
 
   useEffect(() => {
-    const sid = getStudentId();
     const headers = { Authorization: `Bearer ${getToken()}` };
     fetch(`${API}/slots`).then(r => r.json()).then(setSlots).catch(() => {});
-    fetch(`${API}/student/${sid}`, { headers })
+    fetch(`${API}/my-student`, { headers })
       .then(r => r.json())
       .then(d => setEntries(Array.isArray(d) ? d : []))
       .catch(() => {})
