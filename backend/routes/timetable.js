@@ -46,6 +46,25 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+// GET timetable for logged-in teacher (uses JWT)
+router.get("/my", auth, async (req, res) => {
+  try {
+    const teacherQ = await pool.query("SELECT id FROM teachers WHERE user_id=$1", [req.user.id]);
+    if (!teacherQ.rows[0]) return res.json([]);
+    const result = await pool.query(`
+      SELECT t.id, t.day, t.slot_id, t.course_code, c.name AS course_name,
+             r.room_name, s.slot_name, s.start_time, s.end_time
+      FROM timetables t
+      JOIN courses c ON t.course_code = c.code
+      JOIN rooms r   ON t.room_id     = r.id
+      JOIN slots s   ON t.slot_id     = s.id
+      WHERE t.teacher_id = $1
+      ORDER BY t.day, s.start_time
+    `, [teacherQ.rows[0].id]);
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // GET timetable for a specific teacher
 router.get("/teacher/:teacherId", auth, async (req, res) => {
   try {

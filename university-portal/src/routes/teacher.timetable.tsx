@@ -7,8 +7,7 @@ export const Route = createFileRoute("/teacher/timetable")({
 });
 
 const API = "http://localhost:5000/api/timetable";
-const getToken    = () => localStorage.getItem("token") ?? "";
-const getTeacherId = () => localStorage.getItem("profileId") ?? "";
+const getToken = () => localStorage.getItem("token") ?? "";
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 type Entry = { id: number; day: string; slot_id: number; course_name: string; room_name: string; start_time: string; end_time: string; slot_name: string };
@@ -20,10 +19,9 @@ function TeacherTimetable() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const tid     = getTeacherId();
     const headers = { Authorization: `Bearer ${getToken()}` };
     fetch(`${API}/slots`).then(r => r.json()).then(setSlots).catch(() => {});
-    fetch(`${API}/teacher/${tid}`, { headers })
+    fetch(`${API}/my`, { headers })
       .then(r => r.json())
       .then(d => setEntries(Array.isArray(d) ? d : []))
       .catch(() => {})

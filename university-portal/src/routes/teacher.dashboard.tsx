@@ -19,7 +19,7 @@ function TeacherDashboard() {
 
   useEffect(() => {
     fetch(`${API}/dashboard/teacher`, { headers: h() }).then(r => r.json()).then(setStats).catch(() => {});
-    fetch(`${API}/courses`, { headers: h() }).then(r => r.json()).then(d => setCourses(Array.isArray(d) ? d.slice(0,4) : [])).catch(() => {});
+    fetch(`${API}/courses/teacher`, { headers: h() }).then(r => r.json()).then(d => setCourses(Array.isArray(d) ? d : [])).catch(() => {});
     fetch(`${API}/notices`, { headers: h() }).then(r => r.json()).then(d => setNotices(Array.isArray(d) ? d.slice(0,4) : [])).catch(() => {});
   }, []);
 

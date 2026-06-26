@@ -17,7 +17,10 @@ router.get("/", verifyToken, requireRole("admin"), async (req, res) => {
 // GET /api/teachers/me
 router.get("/me", verifyToken, requireRole("teacher"), async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM teachers WHERE user_id = $1", [req.user.id]);
+    const result = await pool.query(
+      "SELECT t.*, u.email FROM teachers t JOIN users u ON t.user_id = u.id WHERE t.user_id = $1",
+      [req.user.id]
+    );
     if (result.rows.length === 0) return res.status(404).json({ message: "Teacher not found" });
     res.json(result.rows[0]);
   } catch (err) {

@@ -30,6 +30,21 @@ router.get("/my", verifyToken, async (req, res) => {
   }
 });
 
+// GET /api/courses/teacher — only this teacher's courses
+router.get("/teacher", verifyToken, async (req, res) => {
+  try {
+    const teacherQ = await pool.query("SELECT id FROM teachers WHERE user_id=$1", [req.user.id]);
+    if (!teacherQ.rows[0]) return res.json([]);
+    const result = await pool.query(
+      `SELECT c.*, t.name as teacher_name FROM courses c
+       LEFT JOIN teachers t ON c.teacher_id = t.id
+       WHERE c.teacher_id = $1 ORDER BY c.code`,
+      [teacherQ.rows[0].id]
+    );
+    res.json(result.rows);
+  } catch (err) { res.status(500).json({ message: "Server error" }); }
+});
+
 // GET /api/courses — all courses (admin/teacher)
 router.get("/", verifyToken, async (req, res) => {
   try {

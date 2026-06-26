@@ -7,10 +7,10 @@ const { verifyToken } = require("../middleware/auth");
 router.get("/inbox", verifyToken, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT m.*, u.name AS sender_name, u.role AS sender_role
+      SELECT DISTINCT ON (m.from_id, m.body) m.*, u.name AS sender_name, u.role AS sender_role
       FROM messages m JOIN users u ON m.from_id = u.id
       WHERE m.to_id = $1
-      ORDER BY m.created_at DESC
+      ORDER BY m.from_id, m.body, m.created_at DESC
     `, [req.user.id]);
     res.json(result.rows);
   } catch (err) { res.status(500).json({ message: err.message }); }
