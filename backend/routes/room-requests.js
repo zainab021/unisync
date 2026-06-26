@@ -95,33 +95,72 @@ router.post("/", verifyToken, requireRole("teacher"), async (req, res) => {
   }
 });
 
-// PATCH /api/room-requests/:id/status — Admin: approve or reject
+// PATCH /api/room-requests/:id/status — Admin: approve (with auto availability check) or reject
 router.patch("/:id/status", verifyToken, requireRole("admin"), async (req, res) => {
   const { status } = req.body;
   if (!["Approved", "Rejected"].includes(status))
     return res.status(400).json({ message: "Status must be Approved or Rejected" });
   try {
-    const result = await pool.query(
-      "UPDATE room_requests SET status=$1 WHERE id=$2 RETURNING *",
-      [status, req.params.id]
-    );
-    // Email teacher
-    const rr = result.rows[0];
-    if (rr) {
-      const t = await pool.query("SELECT u.id, u.email, t.name FROM teachers t JOIN users u ON t.user_id=u.id WHERE t.id=$1", [rr.teacher_id]);
-      if (t.rows[0]) {
-        createNotification({
-          user_id: t.rows[0].id,
-          title:   `Room Request ${status}`,
-          message: `Your request for ${rr.room} on ${rr.date} has been ${status.toLowerCase()}.`,
-          type:    status === "Approved" ? "success" : "danger",
-          link:    "/teacher/room-request",
-        });
-        email.roomRequestReviewed({ teacherEmail: t.rows[0].email, teacherName: t.rows[0].name, room: rr.room, date: rr.date, slot: rr.slot, status });
+    const rrQ = await pool.query("SELECT * FROM room_requests WHERE id=$1", [req.params.id]);
+    if (!rrQ.rows[0]) return res.status(404).json({ message: "Not found" });
+    const rr = rrQ.rows[0];
+
+    let finalStatus = status;
+    let rejectReason = null;
+
+    if (status === "Approved") {
+      // 1. Check if room is already in another approved room_request for same date+slot
+      const conflictReq = await pool.query(`
+        SELECT id FROM room_requests
+        WHERE room=$1 AND date=$2 AND slot=$3 AND status='Approved' AND id!=$4
+      `, [rr.room, rr.date, rr.slot, rr.id]);
+
+      if (conflictReq.rows.length > 0) {
+        finalStatus = "Rejected";
+        rejectReason = `Room ${rr.room} is already booked on ${rr.date} at ${rr.slot} by another request.`;
+      } else {
+        // 2. Check if room is in the permanent timetable for that day+slot
+        const dayOfWeek = new Date(rr.date).toLocaleDateString("en-US", { weekday: "long" });
+        const timetableConflict = await pool.query(`
+          SELECT c.name AS course_name FROM timetables t
+          JOIN rooms r ON t.room_id = r.id
+          JOIN slots s ON t.slot_id = s.id
+          JOIN courses c ON t.course_code = c.code
+          WHERE r.room_name = $1 AND t.day = $2 AND s.slot_name = $3
+        `, [rr.room, dayOfWeek, rr.slot]);
+
+        if (timetableConflict.rows.length > 0) {
+          finalStatus = "Rejected";
+          rejectReason = `Room ${rr.room} has a regular class (${timetableConflict.rows[0].course_name}) on ${dayOfWeek} at ${rr.slot}.`;
+        }
       }
     }
-    if (result.rowCount === 0) return res.status(404).json({ message: "Not found" });
-    res.json(result.rows[0]);
+
+    const result = await pool.query(
+      "UPDATE room_requests SET status=$1 WHERE id=$2 RETURNING *",
+      [finalStatus, rr.id]
+    );
+
+    // Notify teacher
+    const t = await pool.query(
+      "SELECT u.id, u.email, t.name FROM teachers t JOIN users u ON t.user_id=u.id WHERE t.id=$1",
+      [rr.teacher_id]
+    );
+    if (t.rows[0]) {
+      const msg = finalStatus === "Approved"
+        ? `Your request for ${rr.room} on ${rr.date} (${rr.slot}) has been approved ✅`
+        : `Your request for ${rr.room} was rejected. ${rejectReason || ""}`;
+      createNotification({
+        user_id: t.rows[0].id,
+        title:   `Room Request ${finalStatus}`,
+        message: msg,
+        type:    finalStatus === "Approved" ? "success" : "danger",
+        link:    "/teacher/room-request",
+      });
+      email.roomRequestReviewed({ teacherEmail: t.rows[0].email, teacherName: t.rows[0].name, room: rr.room, date: rr.date, slot: rr.slot, status: finalStatus });
+    }
+
+    res.json({ ...result.rows[0], autoRejected: finalStatus !== status, rejectReason });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

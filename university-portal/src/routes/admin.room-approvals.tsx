@@ -27,8 +27,13 @@ function AdminRoomApprovalsPage() {
 
   async function updateStatus(id: string, status: "Approved" | "Rejected") {
     try {
-      await fetch(`${API}/${id}/status`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status }) });
-      toast.success(`Request ${status.toLowerCase()}`);
+      const res  = await fetch(`${API}/${id}/status`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status }) });
+      const data = await res.json();
+      if (data.autoRejected) {
+        toast.error(`Auto-Rejected: ${data.rejectReason}`);
+      } else {
+        toast.success(`Request ${data.status.toLowerCase()} ✅`);
+      }
       fetchRequests();
     } catch { toast.error("Failed to update"); }
   }
