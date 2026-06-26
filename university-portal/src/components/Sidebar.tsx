@@ -70,6 +70,7 @@ const adminLinks = [
   { to: "/admin/exams", label: "Exams", icon: FileText },
   { to: "/admin/timetable", label: "Timetable", icon: Calendar },
   { to: "/admin/notices", label: "Notices", icon: Megaphone },
+  { to: "/admin/results", label: "Results Approval", icon: Award },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },
   { to: "/admin/room-approvals", label: "Room Approvals", icon: DoorOpen },
   { to: "/admin/feedback", label: "Feedback", icon: Star },

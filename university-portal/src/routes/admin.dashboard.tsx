@@ -127,12 +127,19 @@ function AdminDashboardPage() {
           {analytics.feeStats?.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
-                <Pie data={analytics.feeStats} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={65} label={({ status, count }) => `${status}: ${count}`}>
+                <Pie data={analytics.feeStats} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={65} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                  return percent > 0.05 ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11}>{`${(percent * 100).toFixed(0)}%`}</text> : null;
+                }}>
                   {(analytics.feeStats || []).map((e: any, i: number) => (
                     <Cell key={i} fill={e.status === "Paid" ? "#10B981" : e.status === "Overdue" ? "#EF4444" : "#F59E0B"} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
+                <Legend formatter={(value) => <span style={{ color: "#94a3b8", fontSize: 11 }}>{value}</span>} />
               </PieChart>
             </ResponsiveContainer>
           ) : <p className="text-xs text-slate-500 mt-4">No fee data yet.</p>}
@@ -144,8 +151,8 @@ function AdminDashboardPage() {
           {analytics.attendance?.length > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={analytics.attendance}>
-                <XAxis dataKey="status" tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                <XAxis dataKey="status" tick={{ fill: "#e2e8f0", fontSize: 11 }} />
+                <YAxis tick={{ fill: "#e2e8f0", fontSize: 11 }} />
                 <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} />
                 <Bar dataKey="count" radius={[4,4,0,0]}>
                   {(analytics.attendance || []).map((e: any, i: number) => (
