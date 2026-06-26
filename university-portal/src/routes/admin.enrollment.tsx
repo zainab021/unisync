@@ -32,6 +32,11 @@ function AdminEnrollmentPage() {
   const [filter, setFilter]           = useState("All");
   const [tab, setTab]                 = useState<"enrollments" | "drops">("enrollments");
   const [search, setSearch]           = useState("");
+  const [bulkModal, setBulkModal]     = useState(false);
+  const [bulkForm, setBulkForm]       = useState({ program: "", semester: `Spring ${new Date().getFullYear()}`, course_codes: [] as string[] });
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const PROGRAMS = ["BS Computer Science", "BS Software Engineering", "BS Artificial Intelligence"];
 
   useEffect(() => {
     fetchEnrollments();
@@ -87,6 +92,23 @@ function AdminEnrollmentPage() {
     } catch { toast.error("Failed to remove."); }
   }
 
+  async function handleBulkEnroll() {
+    if (!bulkForm.program || !bulkForm.semester || !bulkForm.course_codes.length) {
+      toast.error("Select program, semester and at least one course."); return;
+    }
+    setBulkLoading(true);
+    try {
+      const res = await fetch(`${API}/bulk`, { method: "POST", headers: authHeaders(), body: JSON.stringify(bulkForm) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      toast.success(data.message);
+      setBulkModal(false);
+      setBulkForm({ program: "", semester: `Spring ${new Date().getFullYear()}`, course_codes: [] });
+      fetchEnrollments();
+    } catch (err: any) { toast.error(err.message ?? "Bulk enrollment failed."); }
+    setBulkLoading(false);
+  }
+
   async function handleDrop(id: number, action: "approve" | "reject") {
     try {
       await fetch(`${DROP_API}/${id}/${action}`, { method: "PATCH", headers: authHeaders() });
@@ -109,10 +131,16 @@ function AdminEnrollmentPage() {
           <h1 className="text-2xl font-bold text-white">Enrollment Management</h1>
           <p className="mt-1 text-xs text-slate-400">Enroll students and manage course drop requests.</p>
         </div>
-        <button onClick={() => { setForm({ student_id: students[0]?.id ?? "", course_code: courses[0]?.code ?? "", semester: `Spring ${new Date().getFullYear()}` }); setModalOpen(true); }}
-          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-amber-400 transition">
-          <Plus className="h-4 w-4" /> Enroll Student
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setBulkModal(true)}
+            className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-300 hover:bg-amber-500/20 transition">
+            <CheckCircle className="h-4 w-4" /> Bulk Enroll
+          </button>
+          <button onClick={() => { setForm({ student_id: students[0]?.id ?? "", course_code: courses[0]?.code ?? "", semester: `Spring ${new Date().getFullYear()}` }); setModalOpen(true); }}
+            className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-amber-400 transition">
+            <Plus className="h-4 w-4" /> Enroll Student
+          </button>
+        </div>
       </div>
 
       {/* Pending drops alert */}
@@ -280,6 +308,60 @@ function AdminEnrollmentPage() {
         </div>
       </Modal>
       </>}
+
+      {/* Bulk Enroll Modal */}
+      <Modal open={bulkModal} onClose={() => setBulkModal(false)} title="Bulk Enroll Students">
+        <div className="space-y-4">
+          <p className="text-xs text-slate-400">Select a program and courses — all active students in that program will be enrolled at once.</p>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-widest text-slate-500">Program</label>
+            <select value={bulkForm.program} onChange={e => setBulkForm(f => ({ ...f, program: e.target.value }))}
+              className="w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none">
+              <option value="">— Select Program —</option>
+              {PROGRAMS.map(p => <option key={p}>{p}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-widest text-slate-500">Semester</label>
+            <input value={bulkForm.semester} onChange={e => setBulkForm(f => ({ ...f, semester: e.target.value }))}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500/50"
+              placeholder="e.g. Spring 2026" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-slate-500">
+              Courses ({bulkForm.course_codes.length} selected)
+            </label>
+            <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-white/10 bg-white/5 p-2">
+              {courses.map(c => (
+                <label key={c.code} className="flex items-center gap-2.5 rounded px-2 py-1.5 hover:bg-white/5 cursor-pointer">
+                  <input type="checkbox"
+                    checked={bulkForm.course_codes.includes(c.code)}
+                    onChange={e => setBulkForm(f => ({
+                      ...f,
+                      course_codes: e.target.checked
+                        ? [...f.course_codes, c.code]
+                        : f.course_codes.filter(x => x !== c.code)
+                    }))}
+                    className="accent-amber-500" />
+                  <span className="text-sm text-slate-300">{c.name}</span>
+                  <span className="ml-auto text-xs text-amber-400 font-mono">{c.code}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => setBulkModal(false)} className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+            <button onClick={handleBulkEnroll} disabled={bulkLoading}
+              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-amber-400 disabled:opacity-50">
+              {bulkLoading ? "Enrolling..." : "Bulk Enroll"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
