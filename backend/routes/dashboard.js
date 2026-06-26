@@ -76,7 +76,7 @@ router.get("/student", verifyToken, async (req, res) => {
     const [attendance, fees, exams, courses] = await Promise.all([
       pool.query("SELECT COUNT(*) as total, SUM(CASE WHEN status='Present' THEN 1 ELSE 0 END) as present FROM attendance WHERE student_id=$1", [sid]),
       pool.query("SELECT COUNT(*) FROM fees WHERE student_id=$1 AND status='Pending'", [sid]),
-      pool.query("SELECT * FROM exams WHERE date >= CURRENT_DATE ORDER BY date LIMIT 1"),
+      pool.query(`SELECT e.* FROM exams e WHERE e.date >= CURRENT_DATE AND e.course_code IN (SELECT course_code FROM enrollments WHERE student_id=$1 AND status='Enrolled') ORDER BY e.date LIMIT 1`, [sid]),
       pool.query("SELECT COUNT(*) FROM enrollments WHERE student_id=$1 AND status='Enrolled'", [sid]),
     ]);
 

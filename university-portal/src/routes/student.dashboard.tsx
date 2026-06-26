@@ -28,7 +28,7 @@ function Dashboard() {
 
   useEffect(() => {
     fetch(`${API}/dashboard/student`, { headers: h() }).then(r => r.json()).then(setStats).catch(() => {});
-    fetch(`${API}/courses`, { headers: h() }).then(r => r.json()).then(d => setCourses(Array.isArray(d) ? d.slice(0,4) : [])).catch(() => {});
+    fetch(`${API}/courses/my`, { headers: h() }).then(r => r.json()).then(d => setCourses(Array.isArray(d) ? d.slice(0,4) : [])).catch(() => {});
     fetch(`${API}/notices`, { headers: h() }).then(r => r.json()).then(d => setNotices(Array.isArray(d) ? d.slice(0,4) : [])).catch(() => {});
   }, []);
 
@@ -97,7 +97,7 @@ function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-white">Available Courses</h2>
+            <h2 className="text-base font-semibold text-white">My Courses</h2>
             <Link to="/student/courses" className="flex items-center gap-1 text-xs text-amber-400 hover:underline">
               View all <ArrowRight className="h-3 w-3" />
             </Link>
