@@ -8,8 +8,8 @@ export const Route = createFileRoute("/teacher/attendance")({
   component: TeacherAttendance,
 });
 
-const COURSES_API    = "http://localhost:5000/api/courses";
-const ATTENDANCE_API = "http://localhost:5000/api/attendance";
+const COURSES_API    = "https://unisync-4ovf.onrender.com/api/courses";
+const ATTENDANCE_API = "https://unisync-4ovf.onrender.com/api/attendance";
 const getToken       = () => localStorage.getItem("token") ?? "";
 const authHeaders    = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 
@@ -59,7 +59,7 @@ function TeacherAttendance() {
           setMarks(m);
         } else {
           // No attendance yet — fetch student list from enrollment
-          return fetch(`http://localhost:5000/api/enrollment?course=${course}`, { headers: authHeaders() })
+          return fetch(`https://unisync-4ovf.onrender.com/api/enrollment?course=${course}`, { headers: authHeaders() })
             .then(r => r.json())
             .then(enrolled => {
               if (Array.isArray(enrolled)) {

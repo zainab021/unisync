@@ -7,7 +7,7 @@ export const Route = createFileRoute("/student/events")({
   component: EventsPage,
 });
 
-const API = "http://localhost:5000/api/events";
+const API = "https://unisync-4ovf.onrender.com/api/events";
 const getToken = () => localStorage.getItem("token") ?? "";
 
 type Event = { id: number; title: string; date: string; end_date?: string; category: string; color: string; created_by_name?: string };

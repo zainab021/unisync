@@ -9,7 +9,7 @@ export const Route = createFileRoute("/student/fees")({
   component: FeesPage,
 });
 
-const API = "http://localhost:5000/api/fees/my";
+const API = "https://unisync-4ovf.onrender.com/api/fees/my";
 const getToken = () => localStorage.getItem("token") ?? "";
 
 type Fee = { id: string; semester: string; amount: number; due_date: string; status: string; paid_on?: string };

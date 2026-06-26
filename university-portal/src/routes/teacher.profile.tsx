@@ -8,7 +8,7 @@ export const Route = createFileRoute("/teacher/profile")({
   component: TeacherProfilePage,
 });
 
-const API = "http://localhost:5000/api/teachers/me";
+const API = "https://unisync-4ovf.onrender.com/api/teachers/me";
 const getToken = () => localStorage.getItem("token") ?? "";
 const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 
@@ -30,7 +30,7 @@ function TeacherProfilePage() {
   async function handleSave() {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/teachers/${teacher?.id}`, {
+      const res = await fetch(`https://unisync-4ovf.onrender.com/api/teachers/${teacher?.id}`, {
         method: "PUT", headers: authHeaders(), body: JSON.stringify(form)
       });
       if (!res.ok) throw new Error();

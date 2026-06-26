@@ -42,7 +42,7 @@ export function Navbar() {
   function fetchNotifs() {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:5000/api/notifications", { headers: { Authorization: `Bearer ${token}` } })
+    fetch("https://unisync-4ovf.onrender.com/api/notifications", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => setNotices(Array.isArray(d) ? d : [])).catch(() => {});
   }
 
@@ -79,7 +79,7 @@ export function Navbar() {
       setSearching(true);
       try {
         const token = localStorage.getItem("token") ?? "";
-        const res   = await fetch(`http://localhost:5000/api/search?q=${encodeURIComponent(search)}`, {
+        const res   = await fetch(`https://unisync-4ovf.onrender.com/api/search?q=${encodeURIComponent(search)}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
@@ -94,13 +94,13 @@ export function Navbar() {
 
   async function markAllRead() {
     const token = localStorage.getItem("token") ?? "";
-    await fetch("http://localhost:5000/api/notifications/read-all/all", { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    await fetch("https://unisync-4ovf.onrender.com/api/notifications/read-all/all", { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
     setNotices(prev => prev.map(n => ({ ...n, read: true })));
   }
 
   async function markRead(id: number) {
     const token = localStorage.getItem("token") ?? "";
-    await fetch(`http://localhost:5000/api/notifications/${id}/read`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+    await fetch(`https://unisync-4ovf.onrender.com/api/notifications/${id}/read`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
     setNotices(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
     setReadIds(prev => new Set([...prev, id]));
   }

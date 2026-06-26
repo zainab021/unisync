@@ -6,7 +6,7 @@ import Modal from "@/components/Modal";
 
 export const Route = createFileRoute("/admin/departments")({ component: AdminDepartmentsPage });
 
-const API = "http://localhost:5000/api/departments";
+const API = "https://unisync-4ovf.onrender.com/api/departments";
 const getToken = () => localStorage.getItem("token") ?? "";
 const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

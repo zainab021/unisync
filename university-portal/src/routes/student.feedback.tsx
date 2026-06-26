@@ -8,8 +8,8 @@ export const Route = createFileRoute("/student/feedback")({
   component: FeedbackPage,
 });
 
-const API         = "http://localhost:5000/api/feedback";
-const COURSES_API  = "http://localhost:5000/api/courses/my";
+const API         = "https://unisync-4ovf.onrender.com/api/feedback";
+const COURSES_API  = "https://unisync-4ovf.onrender.com/api/courses/my";
 const getToken    = () => localStorage.getItem("token") ?? "";
 const h = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

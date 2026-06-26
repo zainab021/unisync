@@ -6,7 +6,7 @@ import StatusBadge from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/admin/document-requests")({ component: AdminDocumentRequestsPage });
 
-const API = "http://localhost:5000/api/doc-requests";
+const API = "https://unisync-4ovf.onrender.com/api/doc-requests";
 const getToken = () => localStorage.getItem("token") ?? "";
 const h = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

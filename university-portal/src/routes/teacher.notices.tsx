@@ -9,7 +9,7 @@ export const Route = createFileRoute("/teacher/notices")({
   component: TeacherNoticesPage,
 });
 
-const API = "http://localhost:5000/api/notices";
+const API = "https://unisync-4ovf.onrender.com/api/notices";
 const getToken = () => localStorage.getItem("token") ?? "";
 const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 const CATEGORIES = ["Academic", "Library", "Event", "Finance", "General"];

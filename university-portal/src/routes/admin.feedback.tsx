@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 
 export const Route = createFileRoute("/admin/feedback")({ component: AdminFeedbackPage });
 
-const API = "http://localhost:5000/api/feedback";
+const API = "https://unisync-4ovf.onrender.com/api/feedback";
 const getToken = () => localStorage.getItem("token") ?? "";
 const h = () => ({ Authorization: `Bearer ${getToken()}` });
 

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/teacher/leave")({
   component: TeacherLeavePage,
 });
 
-const API = "http://localhost:5000/api/leave-requests";
+const API = "https://unisync-4ovf.onrender.com/api/leave-requests";
 const getToken = () => localStorage.getItem("token") ?? "";
 const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

@@ -7,10 +7,10 @@ import StatusBadge from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/admin/enrollment")({ component: AdminEnrollmentPage });
 
-const API          = "http://localhost:5000/api/enrollment";
-const STUDENTS_API = "http://localhost:5000/api/students";
-const COURSES_API  = "http://localhost:5000/api/courses";
-const DROP_API     = "http://localhost:5000/api/drop-requests";
+const API          = "https://unisync-4ovf.onrender.com/api/enrollment";
+const STUDENTS_API = "https://unisync-4ovf.onrender.com/api/students";
+const COURSES_API  = "https://unisync-4ovf.onrender.com/api/courses";
+const DROP_API     = "https://unisync-4ovf.onrender.com/api/drop-requests";
 const getToken     = () => localStorage.getItem("token") ?? "";
 const authHeaders  = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

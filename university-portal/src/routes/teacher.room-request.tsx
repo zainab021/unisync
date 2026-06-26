@@ -9,7 +9,7 @@ export const Route = createFileRoute("/teacher/room-request")({
   component: RoomRequestPage,
 });
 
-const BASE         = "http://localhost:5000/api";
+const BASE         = "https://unisync-4ovf.onrender.com/api";
 const getToken     = () => localStorage.getItem("token") ?? "";
 const authHeaders  = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

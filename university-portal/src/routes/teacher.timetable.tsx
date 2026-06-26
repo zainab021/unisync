@@ -6,7 +6,7 @@ export const Route = createFileRoute("/teacher/timetable")({
   component: TeacherTimetable,
 });
 
-const API = "http://localhost:5000/api/timetable";
+const API = "https://unisync-4ovf.onrender.com/api/timetable";
 const getToken = () => localStorage.getItem("token") ?? "";
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 

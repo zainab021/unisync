@@ -4,7 +4,7 @@ let socket: Socket | null = null;
 
 export function connectSocket(userId: string) {
   if (socket?.connected) return socket;
-  socket = io("http://localhost:5000", {
+  socket = io("https://unisync-4ovf.onrender.com", {
     query: { userId },
     transports: ["websocket"],
   });

@@ -5,8 +5,8 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/notifications")({ component: AdminActivityPage });
 
-const NOTIF_API = "http://localhost:5000/api/notifications";
-const AUDIT_API = "http://localhost:5000/api/audit-logs";
+const NOTIF_API = "https://unisync-4ovf.onrender.com/api/notifications";
+const AUDIT_API = "https://unisync-4ovf.onrender.com/api/audit-logs";
 const getToken  = () => localStorage.getItem("token") ?? "";
 const h = () => ({ Authorization: `Bearer ${getToken()}` });
 

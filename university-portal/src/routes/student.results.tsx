@@ -6,7 +6,7 @@ export const Route = createFileRoute("/student/results")({
   component: ResultsPage,
 });
 
-const API = "http://localhost:5000/api/grades/my";
+const API = "https://unisync-4ovf.onrender.com/api/grades/my";
 const getToken = () => localStorage.getItem("token") ?? "";
 
 type Grade = { id: number; course_code: string; course_name: string; semester: string; quiz: number; mid: number; assignment: number; final: number; submitted: boolean };

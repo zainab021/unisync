@@ -7,7 +7,7 @@ import StatusBadge from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/admin/students")({ component: AdminStudentsPage });
 
-const API = "http://localhost:5000/api/students";
+const API = "https://unisync-4ovf.onrender.com/api/students";
 const getToken = () => localStorage.getItem("token") ?? "";
 const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

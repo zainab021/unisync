@@ -6,7 +6,7 @@ import StatusBadge from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/admin/room-approvals")({ component: AdminRoomApprovalsPage });
 
-const API = "http://localhost:5000/api/room-requests";
+const API = "https://unisync-4ovf.onrender.com/api/room-requests";
 const getToken = () => localStorage.getItem("token") ?? "";
 const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

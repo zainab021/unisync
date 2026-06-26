@@ -7,7 +7,7 @@ export const Route = createFileRoute("/student/exams")({
   component: ExamsPage,
 });
 
-const API = "http://localhost:5000/api/exams/my";
+const API = "https://unisync-4ovf.onrender.com/api/exams/my";
 const getToken = () => localStorage.getItem("token") ?? "";
 
 type Exam = { id: number; subject: string; course_name?: string; course_code: string; date: string; time: string; venue: string; duration: string; type: string };

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/student/attendance")({
   component: AttendancePage,
 });
 
-const API = "http://localhost:5000/api/attendance/my";
+const API = "https://unisync-4ovf.onrender.com/api/attendance/my";
 const getToken = () => localStorage.getItem("token") ?? "";
 
 type AttendanceRecord = { id: number; course_code: string; course_name: string; date: string; status: string };

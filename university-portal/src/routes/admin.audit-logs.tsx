@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/audit-logs")({ component: AdminAuditLogsPage });
 
-const API = "http://localhost:5000/api/backups";
+const API = "https://unisync-4ovf.onrender.com/api/backups";
 const getToken = () => localStorage.getItem("token") ?? "";
 const authHeaders = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

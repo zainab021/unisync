@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 
 export const Route = createFileRoute("/admin/dashboard")({ component: AdminDashboardPage });
 
-const API = "http://localhost:5000/api";
+const API = "https://unisync-4ovf.onrender.com/api";
 const getToken = () => localStorage.getItem("token") ?? "";
 const h = () => ({ Authorization: `Bearer ${getToken()}` });
 

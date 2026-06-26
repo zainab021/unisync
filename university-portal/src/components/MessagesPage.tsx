@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Send, Inbox, ArrowUpRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-const API = "http://localhost:5000/api/messages";
+const API = "https://unisync-4ovf.onrender.com/api/messages";
 const getToken = () => localStorage.getItem("token") ?? "";
 const h = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

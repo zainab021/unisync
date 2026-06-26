@@ -10,7 +10,7 @@ export const Route = createFileRoute("/student/documents")({
   component: DocumentsPage,
 });
 
-const API = "http://localhost:5000/api/doc-requests";
+const API = "https://unisync-4ovf.onrender.com/api/doc-requests";
 const getToken = () => localStorage.getItem("token") ?? "";
 const h = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 

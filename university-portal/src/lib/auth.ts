@@ -1,4 +1,4 @@
-const API = "http://localhost:5000/api";
+const API = "https://unisync-4ovf.onrender.com/api";
 
 export type UserRole = "student" | "teacher" | "admin";
 

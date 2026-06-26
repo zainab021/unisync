@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Megaphone } from "lucide-react";
 
-const API = "http://localhost:5000/api/notices";
+const API = "https://unisync-4ovf.onrender.com/api/notices";
 const getToken = () => localStorage.getItem("token") ?? "";
 
 const CATEGORIES = ["All", "Academic", "Library", "Event", "Finance", "General"];

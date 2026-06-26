@@ -7,7 +7,7 @@ export const Route = createFileRoute("/student/library")({
   component: LibraryPage,
 });
 
-const API = "http://localhost:5000/api/library";
+const API = "https://unisync-4ovf.onrender.com/api/library";
 const getToken = () => localStorage.getItem("token") ?? "";
 const h = () => ({ Authorization: `Bearer ${getToken()}` });
 

@@ -6,7 +6,7 @@ import Modal from "@/components/Modal";
 
 export const Route = createFileRoute("/admin/academic-calendar")({ component: AdminCalendarPage });
 
-const API = "http://localhost:5000/api/events";
+const API = "https://unisync-4ovf.onrender.com/api/events";
 const getToken = () => localStorage.getItem("token") ?? "";
 const h = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
 
