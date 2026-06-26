@@ -136,12 +136,14 @@ function TeacherAttendance() {
               className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none [color-scheme:dark]" />
           </div>
         </div>
-        <div className="flex items-end flex-col gap-1">
-          <button onClick={save} disabled={saving || students.length === 0}
-            className={`w-full inline-flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold shadow-lg transition ${isDirty ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:from-amber-300" : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"} disabled:opacity-50`}>
-            <Save className="h-4 w-4" /> {saving ? "Saving..." : isDirty ? "⚠️ Save Attendance" : "✓ Attendance Saved"}
-          </button>
-          {savedAt && savedAt !== "loaded" && <p className="text-[10px] text-emerald-400">Last saved at {savedAt}</p>}
+        <div className="flex items-end">
+          <div className="w-full">
+            <button onClick={save} disabled={saving || students.length === 0}
+              className={`w-full inline-flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold shadow-lg transition ${isDirty ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:from-amber-300" : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"} disabled:opacity-50`}>
+              <Save className="h-4 w-4" /> {saving ? "Saving..." : isDirty ? "⚠️ Save Attendance" : "✓ Saved"}
+            </button>
+            {savedAt && savedAt !== "loaded" && <p className="mt-1 text-[10px] text-emerald-400 text-center">Last saved at {savedAt}</p>}
+          </div>
         </div>
       </div>
 
