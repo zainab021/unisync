@@ -32,6 +32,8 @@ function TeacherAttendance() {
   const [marks, setMarks]     = useState<Record<string, Mark>>({});
   const [saving, setSaving]   = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Load courses
   useEffect(() => {
@@ -57,6 +59,8 @@ function TeacherAttendance() {
           const m: Record<string, Mark> = {};
           data.forEach((s: any) => { m[s.student_id] = (s.status as Mark) || "Present"; });
           setMarks(m);
+          setIsDirty(false);
+          setSavedAt("loaded");
         } else {
           // No attendance yet — fetch student list from enrollment
           return fetch(`https://unisync-4ovf.onrender.com/api/enrollment?course=${course}`, { headers: authHeaders() })
@@ -72,6 +76,8 @@ function TeacherAttendance() {
                 const m: Record<string, Mark> = {};
                 list.forEach((s: any) => { m[s.student_id] = "Present"; });
                 setMarks(m);
+                setIsDirty(false);
+                setSavedAt(null);
               }
             });
         }
@@ -96,9 +102,9 @@ function TeacherAttendance() {
         body: JSON.stringify({ records, course_code: course, date })
       });
       if (!res.ok) throw new Error();
-      toast.success(`Attendance saved for ${course} · ${date}`, {
-        description: `${counts.Present} present, ${counts.Absent} absent, ${counts.Leave} on leave`,
-      });
+      toast.success(`Attendance saved! ${counts.Present} present, ${counts.Absent} absent, ${counts.Leave} on leave`);
+      setSavedAt(new Date().toLocaleTimeString());
+      setIsDirty(false);
     } catch { toast.error("Failed to save attendance."); }
     setSaving(false);
   }
@@ -130,11 +136,12 @@ function TeacherAttendance() {
               className="flex-1 bg-transparent py-2.5 text-sm text-white outline-none [color-scheme:dark]" />
           </div>
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end flex-col gap-1">
           <button onClick={save} disabled={saving || students.length === 0}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 py-2.5 text-sm font-bold text-slate-900 hover:from-amber-300 disabled:opacity-50 shadow-lg">
-            <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save Attendance"}
+            className={`w-full inline-flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold shadow-lg transition ${isDirty ? "bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:from-amber-300" : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"} disabled:opacity-50`}>
+            <Save className="h-4 w-4" /> {saving ? "Saving..." : isDirty ? "⚠️ Save Attendance" : "✓ Attendance Saved"}
           </button>
+          {savedAt && savedAt !== "loaded" && <p className="text-[10px] text-emerald-400">Last saved at {savedAt}</p>}
         </div>
       </div>
 
@@ -186,7 +193,7 @@ function TeacherAttendance() {
                     <div className="flex justify-end gap-1 rounded-lg border border-white/10 bg-white/5 p-1 w-fit ml-auto">
                       {MARKS.map(m => (
                         <button key={m}
-                          onClick={() => setMarks({ ...marks, [s.student_id]: m })}
+                          onClick={() => { setMarks({ ...marks, [s.student_id]: m }); setIsDirty(true); }}
                           className={`rounded-md px-3 py-1 text-xs font-semibold transition ${marks[s.student_id] === m ? MARK_STYLES[m] : "text-slate-400 hover:text-white"}`}>
                           {m}
                         </button>
