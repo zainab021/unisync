@@ -1,4 +1,4 @@
-import { Bell, LogOut, Search, X, Sun, Moon } from "lucide-react";
+import { Bell, LogOut, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth";
@@ -19,7 +19,7 @@ export function Navbar() {
   const [open, setOpen]         = useState(false);
   const [notices, setNotices]   = useState<any[]>([]);
   const [readIds, setReadIds]   = useState<Set<number>>(new Set());
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") !== "light");
+  const darkMode = true;
   const [search, setSearch]     = useState("");
   const [results, setResults]   = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
@@ -32,11 +32,6 @@ export function Navbar() {
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
   const avatarLetters = name.split(" ").filter(w => w.length > 0 && isNaN(Number(w[0]))).map(w => w[0]).slice(0, 2).join("").toUpperCase() || "U";
 
-  // Apply theme
-  useEffect(() => {
-    document.documentElement.classList.toggle("light-mode", !darkMode);
-    localStorage.setItem("theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
 
   // Fetch notifications
   function fetchNotifs() {
@@ -157,13 +152,6 @@ export function Navbar() {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Dark/Light toggle */}
-        <button onClick={() => setDarkMode(d => !d)}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-white/5 bg-white/5 text-amber-400 hover:bg-white/10 transition"
-          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
-          {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
-
         {/* Bell */}
         <div className="relative" ref={notifRef}>
           <button onClick={() => setOpen(o => !o)}
