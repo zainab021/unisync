@@ -8,7 +8,7 @@ export const Route = createFileRoute("/teacher/attendance")({
   component: TeacherAttendance,
 });
 
-const COURSES_API    = "https://unisync-4ovf.onrender.com/api/courses";
+const COURSES_API    = "https://unisync-4ovf.onrender.com/api/courses/teacher";
 const ATTENDANCE_API = "https://unisync-4ovf.onrender.com/api/attendance";
 const getToken       = () => localStorage.getItem("token") ?? "";
 const authHeaders    = () => ({ "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` });
