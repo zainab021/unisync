@@ -36,7 +36,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : ["http://localhost:5173", "http://localhost:5174", "http://localhost:8080"];
 
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+const corsOrigin = allowedOrigins.includes("*") ? "*" : allowedOrigins;
+app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json({ limit: "10kb" }));
 
 // ── Rate Limiters ───────────────────────────────────────────────────
