@@ -166,8 +166,12 @@ export function Navbar() {
           </button>
 
           {open && (
-            <div className={cn("absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95",
-              darkMode ? "border-white/10 bg-slate-900/95" : "border-slate-200 bg-white")}>
+            <div className={cn(
+              // Mobile: full-width panel pinned just below the top navbar
+              "fixed top-[7rem] left-2 right-2 sm:absolute sm:top-auto sm:left-auto sm:right-0 sm:mt-2 sm:w-80",
+              "overflow-hidden rounded-xl border shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95",
+              darkMode ? "border-white/10 bg-slate-900/95" : "border-slate-200 bg-white"
+            )}>
               <div className="flex items-center justify-between border-b px-4 py-3"
                 style={{ borderColor: darkMode ? "rgba(255,255,255,0.05)" : "#e2e8f0" }}>
                 <p className={cn("text-sm font-semibold", darkMode ? "text-white" : "text-slate-800")}>Notifications</p>

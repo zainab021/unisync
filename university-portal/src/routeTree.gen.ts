@@ -41,6 +41,7 @@ import { Route as AdminTimetableRouteImport } from './routes/admin.timetable'
 import { Route as AdminTeachersRouteImport } from './routes/admin.teachers'
 import { Route as AdminStudentsRouteImport } from './routes/admin.students'
 import { Route as AdminRoomApprovalsRouteImport } from './routes/admin.room-approvals'
+import { Route as AdminResultsRouteImport } from './routes/admin.results'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminNoticesRouteImport } from './routes/admin.notices'
@@ -215,6 +216,11 @@ const AdminRoomApprovalsRoute = AdminRoomApprovalsRouteImport.update({
   path: '/room-approvals',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminResultsRoute = AdminResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -299,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/results': typeof AdminResultsRoute
   '/admin/room-approvals': typeof AdminRoomApprovalsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
@@ -346,6 +353,7 @@ export interface FileRoutesByTo {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/results': typeof AdminResultsRoute
   '/admin/room-approvals': typeof AdminRoomApprovalsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
@@ -394,6 +402,7 @@ export interface FileRoutesById {
   '/admin/notices': typeof AdminNoticesRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/results': typeof AdminResultsRoute
   '/admin/room-approvals': typeof AdminRoomApprovalsRoute
   '/admin/students': typeof AdminStudentsRoute
   '/admin/teachers': typeof AdminTeachersRoute
@@ -443,6 +452,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/notifications'
     | '/admin/reports'
+    | '/admin/results'
     | '/admin/room-approvals'
     | '/admin/students'
     | '/admin/teachers'
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/notifications'
     | '/admin/reports'
+    | '/admin/results'
     | '/admin/room-approvals'
     | '/admin/students'
     | '/admin/teachers'
@@ -537,6 +548,7 @@ export interface FileRouteTypes {
     | '/admin/notices'
     | '/admin/notifications'
     | '/admin/reports'
+    | '/admin/results'
     | '/admin/room-approvals'
     | '/admin/students'
     | '/admin/teachers'
@@ -800,6 +812,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRoomApprovalsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/results': {
+      id: '/admin/results'
+      path: '/results'
+      fullPath: '/admin/results'
+      preLoaderRoute: typeof AdminResultsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/reports': {
       id: '/admin/reports'
       path: '/reports'
@@ -908,6 +927,7 @@ interface AdminRouteChildren {
   AdminNoticesRoute: typeof AdminNoticesRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminResultsRoute: typeof AdminResultsRoute
   AdminRoomApprovalsRoute: typeof AdminRoomApprovalsRoute
   AdminStudentsRoute: typeof AdminStudentsRoute
   AdminTeachersRoute: typeof AdminTeachersRoute
@@ -928,6 +948,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNoticesRoute: AdminNoticesRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminResultsRoute: AdminResultsRoute,
   AdminRoomApprovalsRoute: AdminRoomApprovalsRoute,
   AdminStudentsRoute: AdminStudentsRoute,
   AdminTeachersRoute: AdminTeachersRoute,

@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import MobileBottomNav from "./MobileBottomNav";
 import { Menu, X } from "lucide-react";
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
@@ -40,8 +41,15 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
 
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">{children}</main>
+
+        {/* Extra bottom padding on mobile so content isn't hidden behind the bottom nav */}
+        <main className="flex-1 overflow-y-auto p-4 pb-24 lg:p-8 lg:pb-8">
+          {children}
+        </main>
       </div>
+
+      {/* Fixed bottom navigation bar — mobile only */}
+      <MobileBottomNav />
     </div>
   );
 }
